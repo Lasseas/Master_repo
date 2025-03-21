@@ -42,7 +42,7 @@ def read_all_sheets(excel):
         print(f"Saved file: {output_filename}")
 
 # Call the function with your Excel file
-read_all_sheets('Test_data_simple_extended.xlsx')
+read_all_sheets('Test_data_simple_extended_2_periods.xlsx')
 
 ####################################################################
 ######################### MODEL SPECIFICATIONS #####################
@@ -235,9 +235,16 @@ OBJECTIVE
 """ 
 
 #OBJECTIVE SHORT FORM
-
+"""
 def objective(model):
     obj_expr = model.I_inv + model.I_GT + sum(sum(model.I_cap_bid[t] + sum(model.Node_Probability[n] * (model.I_activation[n, t] + model.I_DA[n, t] + model.I_ID[n, t] + model.I_OPEX[n, t]) for (n,s) in model.Nodes_in_stage) for (t,s) in model.TimeInStage) for s in model.Period)
+
+    return obj_expr  # Return the fully evaluated expression
+
+model.Objective = pyo.Objective(rule=objective, sense=pyo.minimize)
+"""
+def objective(model):
+    obj_expr = model.I_inv 
 
     return obj_expr  # Return the fully evaluated expression
 
@@ -372,17 +379,21 @@ model.ConversionBalanceIn = pyo.Constraint(model.Nodes_in_stage, model.Time, mod
 ########################### TECHNOLOGY RAMPING CONSTRAINTS ##########################
 #####################################################################################
 
-def Ramping_Technology(model, n, s, p, t, i, e, o):
-        if t == model.Time.first() and s == model.Period.first(): #Første tidssteg i første stage  
-            return (model.y_out[n, t, i, e, o] <= model.Ramping_Factor[i] * (model.Initial_Installed_Capacity[i] + model.v_new_tech[i]))
-        
-        elif t == model.Time.first() and s > model.Period.first(): #overgangen mellom stages
-            return (model.y_out[n, t, i, e, o] - model.y_out[p, model.Time.last(), i, e, o] <= model.Ramping_Factor[i] * (model.Initial_Installed_Capacity[i] + model.v_new_tech[i]))
+def Ramping_Technology(model, n, p, t, s, i, e, o):
+        if (n,s) in model.Nodes_in_stage:
+            if t == model.Time.first() and s == model.Period.first(): #Første tidssteg i første stage  
+                return (model.y_out[n, t, i, e, o] <= model.Ramping_Factor[i] * (model.Initial_Installed_Capacity[i] + model.v_new_tech[i]))
+            
+            #elif t == min(model.TimeInStage[s]) and s > model.Period.first(): #overgangen mellom stages
+            elif (t,s) == min((tau, s) for (tau, period) in model.TimeInStage if period == s) and s > model.Period.first():
+                last_timeStep_in_prev_stage = max(tau for (tau, period) in model.TimeInStage if period == s-1)
+                return (model.y_out[n, t, i, e, o] - model.y_out[p, last_timeStep_in_prev_stage, i, e, o] <= model.Ramping_Factor[i] * (model.Initial_Installed_Capacity[i] + model.v_new_tech[i]))
 
+            else:
+                return (model.y_out[n, t, i, e, o] - model.y_out[n, t-1, i, e, o] <= model.Ramping_Factor[i] * (model.Initial_Installed_Capacity[i] + model.v_new_tech[i]))
         else:
-            return (model.y_out[n, t, i, e, o] - model.y_out[n, t-1, i, e, o] <= model.Ramping_Factor[i] * (model.Initial_Installed_Capacity[i] + model.v_new_tech[i]))
-
-model.RampingTechnology = pyo.Constraint(model.Nodes_in_stage, model.Parent, model.Time, model.TechnologyToEnergyCarrier, rule = Ramping_Technology)
+            return pyo.Constraint.Skip
+model.RampingTechnology = pyo.Constraint(model.Parent_Node, model.TimeInStage, model.TechnologyToEnergyCarrier, rule = Ramping_Technology)
 
 #####################################################################################
 ############## HEAT PUMP LIMITATION - MÅ ENDRES I HENHOLD TIL INPUTDATA #############
@@ -407,7 +418,11 @@ model.HeatPumpInputLimitationMT = pyo.Constraint(model.Nodes_in_stage, model.Tim
 ######################################################
 
 def loads_shifting_time_window(model, n, s, j, e):
-    return sum(model.Up_Shift[n,t,e] - model.Dwn_Shift[n,t,e] for (interval, period, t) in model.TimeLoadShift if interval==j and period==s) == 0
+    relevant_timesteps = [(intervals, periods, t) for (intervals, periods, t) in model.TimeLoadShift if intervals == j and periods == s]
+    if any((t,s) in model.TimeInStage for (_,_,t) in relevant_timesteps):
+        return sum(model.Up_Shift[n,t,e] - model.Dwn_Shift[n,t,e] for (_,_ ,t) in relevant_timesteps) == 0
+    else:
+        return pyo.Constraint.Skip
 model.LoadShiftingWindow = pyo.Constraint(model.Nodes_in_stage, model.LoadShiftingIntervals, model.EnergyCarrier, rule=loads_shifting_time_window)
 
 def no_up_shift_outside_window(model, n, s, t, j, e):
@@ -486,11 +501,19 @@ def flexible_asset_charge_discharge_limit(model, n, s, t, b, e):
         return pyo.Constraint.Skip
 model.FlexibleAssetChargeDischargeLimit = pyo.Constraint(model.Nodes_in_stage, model.Time, model.FlexibleLoadForEnergyCarrier, rule=flexible_asset_charge_discharge_limit)
 
-def state_of_charge(model, n, s, t, b, e):
+def state_of_charge(model, n, s, p, t, b, e):
     if t == 1 and s == 1 :  # Initialisation of flexible assets
         return (
             model.q_SoC[n, t, b]
             == model.Initial_SOC[b] * (model.Max_Storage_Capacity[b] + model.v_new_bat[b]) * (1 - model.Self_Discharge[b])
+            + model.q_charge[n, t, b]
+            - model.q_discharge[n, t, b] / model.Discharge_Efficiency[b]
+        )
+    elif s > 1 and (t,s) == min((tau, s) for (tau, period) in model.TimeInStage if period == s):  # Overgangen mellom stages
+        last_timeStep_in_prev_stage = max(tau for (tau, period) in model.TimeInStage if period == s-1)
+        return (
+            model.q_SoC[n, t, b]
+            == model.q_SoC[p, last_timeStep_in_prev_stage, b] * (1 - model.Self_Discharge[b])
             + model.q_charge[n, t, b]
             - model.q_discharge[n, t, b] / model.Discharge_Efficiency[b]
         )
@@ -504,21 +527,22 @@ def state_of_charge(model, n, s, t, b, e):
         )
     else:
         return pyo.Constraint.Skip
-model.StateOfCharge = pyo.Constraint(model.Nodes_in_stage, model.Time, model.FlexibleLoadForEnergyCarrier, rule=state_of_charge)
+model.StateOfCharge = pyo.Constraint(model.Nodes_in_stage, model.Parent, model.Time, model.FlexibleLoadForEnergyCarrier, rule=state_of_charge)
 
-
+"""
 def state_of_charge_stage_coupling(model, n, s, p, t, b, e):
-    if s > 1 and t == model.TimeInStage.first() and p in model.Parent_Node[n]:  # Overgangen mellom stages
+    if s > 1 and (t,s) == min((tau, s) for (tau, period) in model.TimeInStage if period == s):  # Overgangen mellom stages
+        last_timeStep_in_prev_stage = max(tau for (tau, period) in model.TimeInStage if period == s-1)
         return (
             model.q_SoC[n, t, b]
-            == model.q_SoC[p, model.Time.last(), b] * (1 - model.Self_Discharge[b])
+            == model.q_SoC[p, last_timeStep_in_prev_stage, b] * (1 - model.Self_Discharge[b])
             + model.q_charge[n, t, b]
             - model.q_discharge[n, t, b] / model.Discharge_Efficiency[b]
         )
     else:
         return pyo.Constraint.Skip
 model.StateOfChargeStageCoupling = pyo.Constraint(model.Nodes_in_stage, model.Parent, model.Time, model.FlexibleLoadForEnergyCarrier, rule=state_of_charge_stage_coupling)
-
+"""
 
 def end_of_horizon_SoC(model, n, s, t, b, e):
     if t == model.Time.last() and s == model.Period.last():
