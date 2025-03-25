@@ -1,4 +1,4 @@
-FlexibleLoad	Max__charge_discharge_rate
+FlexibleLoad	Max_charge_discharge_rate
 BESS_Li_Ion_1	5.0
 BESS_Redox_1	1.5
 CAES_1	6.7
