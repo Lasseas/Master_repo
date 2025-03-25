@@ -42,7 +42,7 @@ def read_all_sheets(excel):
         print(f"Saved file: {output_filename}")
 
 # Call the function with your Excel file
-read_all_sheets('Test_data_simple_extended.xlsx')
+read_all_sheets('Test_data_simple_extended_reduced.xlsx')
 
 ####################################################################
 ######################### MODEL SPECIFICATIONS #####################
@@ -380,14 +380,14 @@ model.RampingTechnology = pyo.Constraint(model.Parent_Node, model.Time, model.Pe
 
 def heat_pump_input_limitation_LT(model, n, s, t):
     return (
-        model.y_out[n, t, 'HeatPump_LT', 'LT', 1] - model.y_in[n, t, 'HeatPump_LT', 'Electricity', 1]
+        model.y_out[n, t, 'HP_LT', 'LT', 1] - model.y_in[n, t, 'HP_LT', 'Electricity', 1]
         <= model.Available_Excess_Heat * (model.d_flex[n, t, 'LT'])# + model.Demand[s, t, 'HT'])
     )
 model.HeatPumpInputLimitationLT = pyo.Constraint(model.Nodes_in_stage, model.Time, rule=heat_pump_input_limitation_LT)
 
 def heat_pump_input_limitation_MT(model, n, s, t):
     return (
-        model.y_out[n, t, 'HeatPump_MT', 'MT', 1] - model.y_in[n, t, 'HeatPump_MT', 'Electricity', 1]
+        model.y_out[n, t, 'HP_MT', 'MT', 1] - model.y_in[n, t, 'HP_MT', 'Electricity', 1]
         <= model.Available_Excess_Heat * (model.d_flex[n, t, 'MT'])# + model.Demand[s, t, 'HT'])
     )
 model.HeatPumpInputLimitationMT = pyo.Constraint(model.Nodes_in_stage, model.Time, rule=heat_pump_input_limitation_MT)
@@ -456,7 +456,7 @@ model.ReserveDownLimit = pyo.Constraint(model.Parent_Node, model.Time, model.Per
 
 def reserve_up_limit(model, n, p, t, s, e):
     if e == "Electricity" and (n,s) in model.Nodes_in_stage:  # Ensure e = EL
-        return model.x_UP[n, t] <= (
+        return model.x_UP[p, t] <= (
             model.Up_Shift_Max * model.Demand[n, t, e]
             + sum(
                 model.Max_charge_discharge_rate[b] + model.Energy2Power_Ratio[b] * model.v_new_bat[b]
