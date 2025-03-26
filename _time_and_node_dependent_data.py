@@ -12,7 +12,7 @@ num_branches_to_eighthStage = 0
 num_branches_to_ninthStage = 0
 num_branches_to_tenthStage = 0
 
-num_timesteps = 3
+num_timesteps = 24
 num_nodes = num_branches_to_firstStage + num_branches_to_firstStage*num_branches_to_secondStage + num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage + num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage + num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage + num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage + num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage + num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage + num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage*num_branches_to_ninthStage + num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage*num_branches_to_ninthStage*num_branches_to_tenthStage
 num_firstStageNodes = num_branches_to_firstStage
 num_nodesInlastStage = max(num_branches_to_firstStage, num_branches_to_firstStage*num_branches_to_secondStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage*num_branches_to_ninthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage*num_branches_to_ninthStage*num_branches_to_tenthStage)
@@ -29,9 +29,13 @@ def generate_time_node_dict(tech_name, nodes, timesteps, reference_data, node_fa
             # If reference_data is a dictionary, retrieve the reference value for this timestep;
             # otherwise assume it is a constant.
             if isinstance(reference_data, dict):
-                ref_val = reference_data.get(t, 0)
+                if isinstance(reference_data.get(node), dict):  # node-specific dict
+                    ref_val = reference_data.get(node, {}).get(t, 0)
+                else:  # timestep-only dict
+                    ref_val = reference_data.get(t, 0)
             else:
                 ref_val = reference_data
+
             time_dict[t] = ref_val * factor
         tech_dict[node] = time_dict
     return {tech_name: tech_dict}
@@ -91,8 +95,60 @@ ReferenceDemand = {
 }
 
 
-PV_data = {node: random.uniform(0, 1) for node in nodes}
+#PV_data = {node: random.uniform(0, 1) for node in nodes}
 node_factors_pv = {node: 1 for node in nodes}
+
+##################################################################################
+############################### PV modelling ###############################
+##################################################################################
+
+pv_season_configs = {
+    "summer": {
+        "nodes": set(range(1, 50)),
+        "ranges": [(0.6, 0.9), (0.4, 0.8), (0.2, 0.7)],
+        "zero_hours": [1, 2, 3, 4, 22, 23, 24]
+    },
+    "fall": {
+        "nodes": set(range(50, 100)),
+        "ranges": [(0.3, 0.6), (0.2, 0.5)],
+        "zero_hours": [1, 2, 3, 4, 5, 21, 22, 23, 24]
+    },
+    "winter": {
+        "nodes": set(range(100, 150)),
+        "ranges": [(0.1, 0.4)],
+        "zero_hours": list(range(1, 8)) + list(range(17, 25))  # 1–7 and 17–24
+    },
+    "spring": {
+        "nodes": set(range(150, 1000)),  # everything else
+        "ranges": [(0.4, 0.7), (0.3, 0.6)],
+        "zero_hours": [1, 2, 3, 4, 5, 20, 21, 22, 23, 24]
+    }
+}
+
+def get_pv_season_config(node):
+    for config in pv_season_configs.values():
+        if node in config["nodes"]:
+            return config
+    return {"ranges": [(0.0, 0.0)], "zero_hours": list(range(1, 25))}  # default: zero all
+
+def generate_pv_profile_per_node(config):
+    profile = {}
+    for t in range(1, 25):
+        if t in config["zero_hours"]:
+            profile[t] = 0.0
+        else:
+            pv_range = random.choice(config["ranges"])
+            profile[t] = round(random.uniform(*pv_range), 3)
+    return profile
+
+PV_data = {}
+for node in nodes:
+    config = get_pv_season_config(node)
+    PV_data[node] = generate_pv_profile_per_node(config)
+
+##################################################################################
+############################### PV finished ###############################
+##################################################################################
 
 Tech_availability = {
     **generate_time_node_dict("PV", nodes, timesteps, PV_data, node_factors_pv),
@@ -148,5 +204,5 @@ NodeProbability = generate_node_probability([num_branches_to_firstStage, num_bra
 
 
 import pprint
-pprint.pprint(NodeProbability)
+pprint.pprint(PV_data)
 
