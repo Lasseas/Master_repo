@@ -521,10 +521,10 @@ model.FlexibleAssetEnergyLimits = pyo.Constraint(model.Nodes_in_stage, model.Tim
 ############## AVAILABILITY CONSTRAINT #############
 ####################################################
 
-def supply_limitation(model, n, s, t, i, e, o):
+def supply_limitation(model, n, s, t, i):
     return (sum(model.y_out[n, t, i, e, o] for e,o in model.EnergyCarrier * model.Mode_of_operation if (i,e,o) in model.TechnologyToEnergyCarrier)  
                 <= model.Availability_Factor[n, t, i] * (model.Initial_Installed_Capacity[i] + model.v_new_tech[i]))
-model.SupplyLimitation = pyo.Constraint(model.Nodes_in_stage, model.Time, model.TechnologyToEnergyCarrier, rule=supply_limitation)
+model.SupplyLimitation = pyo.Constraint(model.Nodes_in_stage, model.Time, model.Technology, rule=supply_limitation)
 
 ##############################################################
 ############## EXPORT LIMITATION AND GRID TARIFF #############
