@@ -586,6 +586,12 @@ def Carbon_Emission_Limit(model, n): #Kan løses med aggregert variabel og paren
 model.CarbonEmissionLimit = pyo.Constraint(model.Nodes_in_stage, rule=Carbon_Emission_Limit)
 """
 
+def Carbon_Emission_Limit(model, n, s): 
+    return sum(sum(sum(
+        model.y_activity[n, t, i, o] * model.Carbon_Intensity[i, o]
+        for o in model.Mode_of_operation if (i,o) in model.Carbon_Intensity) for i in model.Technology) for t in model.Time) <= model.Max_Carbon_Emission
+model.CarbonEmissionLimit = pyo.Constraint(model.Nodes_in_stage, rule=Carbon_Emission_Limit)
+
 
 """
 MATCHING DATA FROM CASE WITH MATHEMATICAL MODEL AND PRINTING DATA
