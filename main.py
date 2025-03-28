@@ -58,8 +58,10 @@ SETS
 #Declaring Sets
 model.Time = pyo.Set(ordered=True) #Set of time periods (hours)
 model.Period = pyo.Set(ordered=True) #Set of stages/operational periods
-model.LoadShiftingIntervals = pyo.Set(ordered=True)
-model.TimeLoadShift = pyo.Set(dimen = 3, ordered = True) #Subset of time periods for load shifting in stage s
+model.LoadShiftingPeriod = pyo.Set(ordered=True) 
+#model.LoadShiftingIntervals = pyo.Set(ordered=True)
+model.Time_NO_LoadShift = pyo.Set(dimen = 2, ordered = True) 
+#model.TimeLoadShift = pyo.Set(dimen = 3, ordered = True) #Subset of time periods for load shifting in stage s
 model.Month = pyo.Set(ordered = True) #Set of months
 model.PeriodInMonth = pyo.Set(dimen = 2, ordered = True) #Subset of stages in month m
 model.Technology = pyo.Set(ordered = True) #Set of technologies
@@ -72,6 +74,8 @@ model.FlexibleLoadForEnergyCarrier = pyo.Set(dimen = 2, ordered = True)
 model.Nodes = pyo.Set(ordered=True) #Set of Nodess
 model.Nodes_in_stage = pyo.Set(dimen = 2, ordered = True) #Subset of Nodess
 model.Nodes_first = pyo.Set(within = model.Nodes) #Subset of Nodess
+#model.Nodes_in_month = pyo.Set(dimen = 2, ordered = True) #Subset of Nodess in month m
+#model.Nodes_in_last_stage_in_month = pyo.Set(dimen = 2, ordered = True) #Subset of Nodess in last stage in month m
 model.Parent = pyo.Set(ordered=True) #Set of parents
 model.Parent_Node = pyo.Set(dimen = 2, ordered = True)
 
@@ -79,8 +83,10 @@ model.Parent_Node = pyo.Set(dimen = 2, ordered = True)
 #Reading the Sets, and loading the data
 data.load(filename="Set_of_TimeSteps.tab", format="set", set=model.Time)
 data.load(filename="Set_of_Periods.tab", format="set", set=model.Period)
-data.load(filename="Set_of_LoadShiftingInterval.tab", format = "set", set = model.LoadShiftingIntervals)
-data.load(filename="Subset_LoadShiftWindow.tab", format="set", set=model.TimeLoadShift)
+data.load(filename="Set_of_LoadShiftingPeriod.tab", format="set", set=model.LoadShiftingPeriod)
+#data.load(filename="Set_of_LoadShiftingInterval.tab", format = "set", set = model.LoadShiftingIntervals)
+#data.load(filename="Subset_LoadShiftWindow.tab", format="set", set=model.TimeLoadShift)
+data.load(filename="Set_of_TimeSteps_NO_LoadShift.tab", format = "set", set=model.Time_NO_LoadShift)
 data.load(filename="Set_of_Month.tab", format = "set", set=model.Month)
 data.load(filename="Set_of_PeriodsInMonth.tab", format = "set", set=model.PeriodInMonth)
 data.load(filename="Set_of_Technology.tab", format = "set", set=model.Technology)
@@ -93,6 +99,8 @@ data.load(filename="Set_of_FlexibleLoadForEC.tab", format="set", set=model.Flexi
 data.load(filename="Set_of_Nodes.tab", format="set", set=model.Nodes)
 data.load(filename="Set_of_NodesInStage.tab", format="set", set=model.Nodes_in_stage)
 data.load(filename="Subset_NodesFirst.tab", format="set", set=model.Nodes_first)
+#data.load(filename="Subset_NodesInMonth.tab", format="set", set=model.Nodes_in_month)
+#data.load(filename="Subset_NodesInLastStageInMonth.tab", format="set", set=model.Nodes_in_last_stage_in_month)
 data.load(filename="Set_of_Parents.tab", format="set", set=model.Parent)
 data.load(filename="Set_ParentCoupling.tab", format = "set", set = model.Parent_Node)
 
@@ -208,6 +216,8 @@ model.y_max = pyo.Var(model.Nodes, model.Month, domain = pyo.NonNegativeReals)
 model.d_flex = pyo.Var(model.Nodes, model.Time, model.EnergyCarrier, domain = pyo.NonNegativeReals)
 model.Up_Shift = pyo.Var(model.Nodes, model.Time, model.EnergyCarrier, domain = pyo.NonNegativeReals)
 model.Dwn_Shift = pyo.Var(model.Nodes, model.Time, model.EnergyCarrier, domain = pyo.NonNegativeReals)
+model.aggregated_Up_Shift = pyo.Var(model.Nodes, model.energyCarrier, domain = pyo.NonNegativeReals)
+model.aggregated_Dwn_Shift = pyo.Var(model.Nodes, model.energyCarrier, domain = pyo.NonNegativeReals)
 model.I_inv = pyo.Var()
 model.I_GT = pyo.Var()
 model.I_cap_bid = pyo.Var(model.Time)
@@ -396,6 +406,45 @@ model.HeatPumpInputLimitationMT = pyo.Constraint(model.Nodes_in_stage, model.Tim
 ############## LOAD SHIFTING CONSTRAINTS #############
 ######################################################
 
+def aggregated_up_shift(model, n, p, e):
+    return model.aggregated_Up_Shift[n, e] == model.aggregated_Up_shift[p, e] + sum(model.Up_Shift[n, t, e] for t in model.Time)
+model.AggregatedUpShift = pyo.Constraint(model.Parent_Node, model.EnergyCarrier, rule=aggregated_up_shift)
+
+def aggregated_dwn_shift(model, n, p, e):
+    return model.aggregated_Dwn_Shift[n, e] == model.aggregated_Dwn_shift[p, e] + sum(model.Dwn_Shift[n, t, e] for t in model.Time)
+model.AggregatedDwnShift = pyo.Constraint(model.Parent_Node, model.EnergyCarrier, rule=aggregated_dwn_shift)
+
+def balancing_aggregated_shifted_load(model, n, s, e):
+    if s in model.LoadShiftingPeriod:
+        return model.aggregated_Up_Shift[n, e] == model.aggregated_Dwn_Shift[n, e]
+    else:
+        return pyo.Constraint.Skip
+model.BalancingAggregatedShiftedLoad = pyo.Constraint(model.Nodes_in_stage, model.EnergyCarrier, rule=balancing_aggregated_shifted_load)
+
+def initialize_aggregated_up_shift(model, n, e):
+    return model.aggregated_Up_Shift[n, e] == 0
+model.InitializeAggregatedUpShift = pyo.Constraint(model.Nodes_first, model.EnergyCarrier, rule=initialize_aggregated_up_shift)
+
+def initialize_aggregated_dwn_shift(model, n, e):
+    return model.aggregated_Dwn_Shift[n, e] == 0
+model.InitializeAggregatedDwnShift = pyo.Constraint(model.Nodes_first, model.EnergyCarrier, rule=initialize_aggregated_dwn_shift)
+
+def No_Up_Shift_outside_window(model, n, s, t, e):
+    if (t,s) in model.Time_NO_LoadShift:
+        return model.Up_Shift[n, t, e] == 0
+    else:
+        return pyo.Constraint.Skip
+model.NoUpShiftOutsideWindow = pyo.Constraint(model.Nodes_in_stage, model.Time, model.EnergyCarrier, rule=No_Up_Shift_outside_window)
+
+def No_Dwn_Shift_outside_window(model, n, s, t, e):
+    if (t,s) in model.Time_NO_LoadShift:
+        return model.Dwn_Shift[n, t, e] == 0
+    else:
+        return pyo.Constraint.Skip
+model.NoDwnShiftOutsideWindow = pyo.Constraint(model.Nodes_in_stage, model.Time, model.EnergyCarrier, rule=No_Dwn_Shift_outside_window)
+
+
+"""
 def loads_shifting_time_window(model, n, s, j, e):
     relevant_timesteps = [(intervals, periods, t) for (intervals, periods, t) in model.TimeLoadShift if intervals == j and periods == s]
     if any(t in model.Time for (_,_,t) in relevant_timesteps):
@@ -424,6 +473,7 @@ def no_dwn_shift_outside_window(model, n, s, t, j, e):
     else:
         return pyo.Constraint.Skip
 model.NoDwnShiftOutsideWindow = pyo.Constraint(model.Nodes_in_stage, model.Time, model.LoadShiftingIntervals, model.EnergyCarrier, rule=no_dwn_shift_outside_window)
+"""
 
 def Defining_flexible_demand(model, n, s, t, e):
     return model.d_flex[n, t, e] == model.Demand[n, t, e] + model.Up_Shift[n, t, e] - model.Dwn_Shift[n, t, e]
