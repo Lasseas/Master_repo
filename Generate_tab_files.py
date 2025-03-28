@@ -74,6 +74,56 @@ def make_tab_file(filename, data_generator, chunk_size=10_000_000):
     print(f"{filename} saved successfully!")
 
 
+####################################################################################
+########################### GET CHILD MAPPINNG FUNC #################################
+#####################################################################################
+
+def map_children_to_parents_from_file(tab_filename):
+    # Les tab-fila (antatt tab-separert)
+    df = pd.read_csv(tab_filename, sep="\t")
+    
+    # Bygg et dictionary med umiddelbare relasjoner: barn -> forelder
+    child_to_parent = {row["Node"]: row["Parent"] for _, row in df.iterrows()}
+    
+    # Funksjon for å finne top-level forelder ved å følge oppover i treet
+    def find_top(node):
+        # Hvis node ikke finnes som barn (nøkkel) i child_to_parent,
+        # er den top-level (det antas at top-level foreldre kun er i Parent-kolonnen)
+        if node not in child_to_parent:
+            return node
+        else:
+            return find_top(child_to_parent[node])
+    
+    # Beregn top-level for alle noder (som finnes som barn)
+    top_level = {}
+    for node in child_to_parent:
+        top_level[node] = find_top(node)
+    
+    # Gruppér noder etter top-level forelder
+    grouping = {}
+    for node, top in top_level.items():
+        grouping.setdefault(top, []).append(node)
+    
+    return grouping
+
+def extract_parent_coupling(tab_filename = "Set_ParentCoupling.tab"):
+    df = pd.read_csv(tab_filename, sep="\t")
+    data = {
+        "Node": df["Node"].tolist(),
+        "Parent": df["Parent"].tolist()
+    }
+    return data
+
+data = extract_parent_coupling()
+df_example = pd.DataFrame(data)
+taB_filenam = "Set_ParentCoupling.tab"
+df_example.to_csv(taB_filenam, sep = "\t", index=False, header=True, lineterminator='\n')
+mapping = map_children_to_parents_from_file(taB_filenam)
+print("Førstestegs-forelder : -> [alle etterkommere]:")
+mapping_converted = {int(k): [int(x) for x in v] for k, v in mapping.items()}
+print(mapping_converted)
+
+
 #####################################################################################
 ########################### SET GENERATION FUNCTIONS ################################
 #####################################################################################
