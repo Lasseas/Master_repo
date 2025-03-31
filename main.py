@@ -216,8 +216,8 @@ model.y_max = pyo.Var(model.Nodes, model.Month, domain = pyo.NonNegativeReals)
 model.d_flex = pyo.Var(model.Nodes, model.Time, model.EnergyCarrier, domain = pyo.NonNegativeReals)
 model.Up_Shift = pyo.Var(model.Nodes, model.Time, model.EnergyCarrier, domain = pyo.NonNegativeReals)
 model.Dwn_Shift = pyo.Var(model.Nodes, model.Time, model.EnergyCarrier, domain = pyo.NonNegativeReals)
-model.aggregated_Up_Shift = pyo.Var(model.Nodes, model.energyCarrier, domain = pyo.NonNegativeReals)
-model.aggregated_Dwn_Shift = pyo.Var(model.Nodes, model.energyCarrier, domain = pyo.NonNegativeReals)
+model.aggregated_Up_Shift = pyo.Var(model.Nodes, model.EnergyCarrier, domain = pyo.NonNegativeReals)
+model.aggregated_Dwn_Shift = pyo.Var(model.Nodes, model.EnergyCarrier, domain = pyo.NonNegativeReals)
 model.I_inv = pyo.Var()
 model.I_GT = pyo.Var()
 model.I_cap_bid = pyo.Var(model.Time)
@@ -407,11 +407,11 @@ model.HeatPumpInputLimitationMT = pyo.Constraint(model.Nodes_in_stage, model.Tim
 ######################################################
 
 def aggregated_up_shift(model, n, p, e):
-    return model.aggregated_Up_Shift[n, e] == model.aggregated_Up_shift[p, e] + sum(model.Up_Shift[n, t, e] for t in model.Time)
+    return model.aggregated_Up_Shift[n, e] == model.aggregated_Up_Shift[p, e] + sum(model.Up_Shift[n, t, e] for t in model.Time)
 model.AggregatedUpShift = pyo.Constraint(model.Parent_Node, model.EnergyCarrier, rule=aggregated_up_shift)
 
 def aggregated_dwn_shift(model, n, p, e):
-    return model.aggregated_Dwn_Shift[n, e] == model.aggregated_Dwn_shift[p, e] + sum(model.Dwn_Shift[n, t, e] for t in model.Time)
+    return model.aggregated_Dwn_Shift[n, e] == model.aggregated_Dwn_Shift[p, e] + sum(model.Dwn_Shift[n, t, e] for t in model.Time)
 model.AggregatedDwnShift = pyo.Constraint(model.Parent_Node, model.EnergyCarrier, rule=aggregated_dwn_shift)
 
 def balancing_aggregated_shifted_load(model, n, s, e):
@@ -442,38 +442,6 @@ def No_Dwn_Shift_outside_window(model, n, s, t, e):
     else:
         return pyo.Constraint.Skip
 model.NoDwnShiftOutsideWindow = pyo.Constraint(model.Nodes_in_stage, model.Time, model.EnergyCarrier, rule=No_Dwn_Shift_outside_window)
-
-
-"""
-def loads_shifting_time_window(model, n, s, j, e):
-    relevant_timesteps = [(intervals, periods, t) for (intervals, periods, t) in model.TimeLoadShift if intervals == j and periods == s]
-    if any(t in model.Time for (_,_,t) in relevant_timesteps):
-        return sum(model.Up_Shift[n,t,e] - model.Dwn_Shift[n,t,e] for (_,_ ,t) in relevant_timesteps) == 0
-    else:
-        return pyo.Constraint.Skip
-model.LoadShiftingWindow = pyo.Constraint(model.Nodes_in_stage, model.LoadShiftingIntervals, model.EnergyCarrier, rule=loads_shifting_time_window)
-
-def no_up_shift_outside_window(model, n, s, t, j, e):
-    # Sjekk kun kombinasjoner som faktisk finnes i TimeLoadShift
-    if any((jj == j and ss == s) for (jj, ss, _) in model.TimeLoadShift):
-        if (j, s, t) not in model.TimeLoadShift:
-            return model.Up_Shift[n, t, e] == 0
-        else:
-            return pyo.Constraint.Skip
-    else:
-        return pyo.Constraint.Skip
-model.NoUpShiftOutsideWindow = pyo.Constraint(model.Nodes_in_stage, model.Time, model.LoadShiftingIntervals, model.EnergyCarrier, rule=no_up_shift_outside_window)
-
-def no_dwn_shift_outside_window(model, n, s, t, j, e):
-    if any((jj == j and ss == s) for (jj, ss, _) in model.TimeLoadShift):
-        if (j, s, t) not in model.TimeLoadShift:
-            return model.Dwn_Shift[n, t, e] == 0
-        else:
-            return pyo.Constraint.Skip
-    else:
-        return pyo.Constraint.Skip
-model.NoDwnShiftOutsideWindow = pyo.Constraint(model.Nodes_in_stage, model.Time, model.LoadShiftingIntervals, model.EnergyCarrier, rule=no_dwn_shift_outside_window)
-"""
 
 def Defining_flexible_demand(model, n, s, t, e):
     return model.d_flex[n, t, e] == model.Demand[n, t, e] + model.Up_Shift[n, t, e] - model.Dwn_Shift[n, t, e]
