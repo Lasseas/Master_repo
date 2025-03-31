@@ -1,8 +1,7 @@
 import pandas as pd
 import numpy as np
 import random
-from _time_and_node_dependent_data import Cost_export, ReferenceDemand, NodeProbability, Tech_availability
-from Get_Historical_data_file import CapacityUpPrice, CapacityDwnPrice, ActivationUpPrice, ActivationDwnPrice, SpotPrice, IntradayPrice, PV_data
+from Get_Historical_and_technological_data_file import Cost_export, ReferenceDemand, NodeProbability, Tech_availability, CapacityUpPrice, CapacityDwnPrice, ActivationUpPrice, ActivationDwnPrice, SpotPrice, IntradayPrice
 
 #####################################################################################
 ################################## KONSTANTE SETT ###################################
@@ -12,11 +11,11 @@ from Get_Historical_data_file import CapacityUpPrice, CapacityDwnPrice, Activati
 
 num_branches_to_firstStage = 4 # Antall grener til det vi i LateX har definert som Omega^first
 num_branches_to_secondStage = 2
-num_branches_to_thirdStage = 2
-num_branches_to_fourthStage = 2
-num_branches_to_fifthStage = 2
-num_branches_to_sixthStage = 2
-num_branches_to_seventhStage = 2
+num_branches_to_thirdStage = 0
+num_branches_to_fourthStage = 0
+num_branches_to_fifthStage = 0
+num_branches_to_sixthStage = 0
+num_branches_to_seventhStage = 0
 num_branches_to_eighthStage = 0
 num_branches_to_ninthStage = 0
 num_branches_to_tenthStage = 0
