@@ -198,8 +198,8 @@ data.load(filename="Par_LastPeriodInMonth.tab", param=model.Last_Period_In_Month
 VARIABLES
 """
 #Declaring Variables
-model.x_UP = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
-model.x_DWN = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
+model.x_UP = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals, bounds = (0,50))
+model.x_DWN = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals, bounds = (0,50))
 model.x_DA_Up = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
 model.x_DA_Dwn = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
 model.x_ID_Up = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)

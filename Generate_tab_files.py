@@ -10,8 +10,8 @@ from Get_Historical_and_technological_data_file import Cost_export, ReferenceDem
 #####################################################################################
 
 num_branches_to_firstStage = 2 # Antall grener til det vi i LateX har definert som Omega^first
-num_branches_to_secondStage = 2
-num_branches_to_thirdStage = 2
+num_branches_to_secondStage = 10
+num_branches_to_thirdStage = 0
 num_branches_to_fourthStage = 0
 num_branches_to_fifthStage = 0
 num_branches_to_sixthStage = 0
