@@ -6,7 +6,7 @@ import pandas as pd
 # ------------------------------------------------------------------------------------------------
 num_branches_to_firstStage = 2 # Antall grener til det vi i LateX har definert som Omega^first
 num_branches_to_secondStage = 10
-num_branches_to_thirdStage = 0
+num_branches_to_thirdStage = 5
 num_branches_to_fourthStage = 0
 num_branches_to_fifthStage = 0
 num_branches_to_sixthStage = 0
@@ -250,6 +250,9 @@ ActivationDwnPrice = extract_series_for_price_column("Activation price down (mFR
 CapacityUpPrice = extract_series_for_price_column("Capacity price up (mFRR)")
 CapacityDwnPrice = extract_series_for_price_column("Capacity price down (mFRR)")
 PV_data = extract_series_for_price_column("Soldata")
+CapacityUpVolume = extract_series_for_price_column("Cap_Volume_Up")
+CapacityDwnVolume = extract_series_for_price_column("Cap_Volume_Down")
+
 
 #Create Tech_availability:
 
@@ -270,4 +273,19 @@ Tech_availability = {
 
 
 import pprint
-pprint.pprint(PV_data)
+pprint.pprint(CapacityUpVolume)
+
+def average_dict_values(nested_dict):
+    total = 0
+    count = 0
+    for node_data in nested_dict.values():
+        for hour_value in node_data.values():
+            total += hour_value
+            count += 1
+    return total / count if count > 0 else 0
+
+avg_capacity_up = average_dict_values(CapacityUpVolume)
+avg_capacity_down = average_dict_values(CapacityDwnVolume)
+
+print(f"Average Capacity Up Price: {avg_capacity_up:.2f} EUR/MW")
+print(f"Average Capacity Down Price: {avg_capacity_down:.2f} EUR/MW")
