@@ -200,8 +200,8 @@ data.load(filename="Par_LastPeriodInMonth.tab", param=model.Last_Period_In_Month
 VARIABLES
 """
 #Declaring Variables
-model.x_UP = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
-model.x_DWN = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
+model.x_UP = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals, bounds = (0,0))
+model.x_DWN = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals, bounds = (0,0))
 model.x_DA_Up = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
 model.x_DA_Dwn = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
 model.x_ID_Up = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
@@ -298,7 +298,7 @@ def cost_ID(model, n, p, t, s):
     else:
         return pyo.Constraint.Skip
 model.IDCost = pyo.Constraint(model.Parent_Node, model.Time, model.Period, rule=cost_ID)    
-
+"""
 def cost_opex(model, n, s, t):
     return model.I_OPEX[n, t] == (sum(
                 model.y_out[n, t, i, e, o] * (model.Cost_Energy[n, t, i] 
@@ -306,6 +306,18 @@ def cost_opex(model, n, s, t):
                 for (i, e, o) in model.TechnologyToEnergyCarrier 
             ) 
             - sum(model.Cost_Export[n, t, i] * model.y_in[n, t, i, e, o] for (i, e, o) in model.EnergyCarrierToTechnology)
+            + sum(model.Cost_Battery[b] * model.q_discharge[n, t, b] for b in model.FlexibleLoad)
+            #Legge til Load shift cost?
+    )
+model.OPEXCost = pyo.Constraint(model.Nodes_in_stage, model.Time, rule=cost_opex)
+"""
+def cost_opex(model, n, s, t):
+    return model.I_OPEX[n, t] == (sum(
+                model.y_activity[n, t, i, o] * (model.Cost_Energy[n, t, i] 
+                + model.Carbon_Intensity[i, o] * model.Cost_Emission)
+                for (i, e, o) in model.TechnologyToEnergyCarrier 
+            ) 
+            - sum(model.Cost_Export[n, t, i] * model.y_activity[n, t, i, o] for (i, e, o) in model.EnergyCarrierToTechnology)
             + sum(model.Cost_Battery[b] * model.q_discharge[n, t, b] for b in model.FlexibleLoad)
             #Legge til Load shift cost?
     )
@@ -390,7 +402,7 @@ model.RampingTechnology = pyo.Constraint(model.Parent_Node, model.Time, model.Pe
 #####################################################################################
 ############## HEAT PUMP LIMITATION - MÅ ENDRES I HENHOLD TIL INPUTDATA #############
 #####################################################################################
-
+"""
 def heat_pump_input_limitation_LT(model, n, s, t):
     return (
         model.y_out[n, t, 'HP_LT', 'LT', 1] - model.y_in[n, t, 'HP_LT', 'Electricity', 1]
@@ -404,6 +416,17 @@ def heat_pump_input_limitation_MT(model, n, s, t):
         <= model.Available_Excess_Heat * (model.d_flex[n, t, 'MT'])# + model.Demand[s, t, 'HT'])
     )
 model.HeatPumpInputLimitationMT = pyo.Constraint(model.Nodes_in_stage, model.Time, rule=heat_pump_input_limitation_MT)
+"""
+
+def heat_pump_input_limitation(model, n, s, t):
+    return (
+        model.y_out[n, t, 'HP_MT', 'MT', 1] - model.y_in[n, t, 'HP_MT', 'Electricity', 1] 
+        + model.y_out[n, t, 'HP_MT', 'LT', 2] - model.y_in[n, t, 'HP_MT', 'Electricity', 2] 
+        + model.y_out[n, t, 'HP_LT', 'LT', 1] - model.y_in[n, t, 'HP_LT', 'Electricity', 1]
+        <= model.Available_Excess_Heat * (model.d_flex[n, t, 'MT'] + model.d_flex[n, t, 'MT'])
+    )
+model.HeatPumpInputLimitation = pyo.Constraint(model.Nodes_in_stage, model.Time, rule=heat_pump_input_limitation)
+
 
 ######################################################
 ############## LOAD SHIFTING CONSTRAINTS #############

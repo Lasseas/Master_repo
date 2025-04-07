@@ -4,9 +4,9 @@ import random
 import pandas as pd
 
 # ------------------------------------------------------------------------------------------------
-num_branches_to_firstStage = 2 # Antall grener til det vi i LateX har definert som Omega^first
-num_branches_to_secondStage = 2
-num_branches_to_thirdStage = 2
+num_branches_to_firstStage = 4 # Antall grener til det vi i LateX har definert som Omega^first
+num_branches_to_secondStage = 20
+num_branches_to_thirdStage = 0
 num_branches_to_fourthStage = 0
 num_branches_to_fifthStage = 0
 num_branches_to_sixthStage = 0
@@ -80,7 +80,8 @@ CostExpansion_Tec = {
     "Biogas_Grid": 1_000_000,
     "CH4_Grid": 1_000_000,
     "CH4_H2_Mixer": 0,
-    "DieselReserveGenerator": 100.4
+    "DieselReserveGenerator": 100.4,
+    "H2_Grid": 1_000_000
 }
 
 CostExpansion_Bat = {
@@ -96,9 +97,7 @@ CostExpansion_Bat = {
 CostGridTariff = 123.93
 
 
-LastPeriodInMonth = {
-    1: 2
-}
+LastPeriodInMonth = {}
 
 
 
@@ -276,9 +275,9 @@ Tech_availability = {
 }
 
 Cost_export = {
-    "H2_Grid": 150.1502,
-    "CH4_Grid": 39.479,
-    "Biogas_Grid": 64.5,
+    "H2_Grid": 0,#150.1502,
+    "CH4_Grid": 0,#39.479,
+    "Biogas_Grid": 0,#64.5,
 }
 
 

@@ -1,8 +1,8 @@
 StorageTech	CostExpansion
-BESS_Li_Ion_1	531.0
-BESS_Redox_1	303.2
-CAES_1	446.8
-Flywheel_1	213.8
-Hot_Water_Tank_LT_1	1.6
-H2_Storage_1	30.2
-CH4_Storage_1	0.024
+BESS_Li_Ion_1	265.5
+BESS_Redox_1	151.6
+CAES_1	223.4
+Flywheel_1	106.9
+Hot_Water_Tank_LT_1	0.8
+H2_Storage_1	15.1
+CH4_Storage_1	0.012

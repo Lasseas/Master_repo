@@ -32,6 +32,6 @@ CHP_CCS	Biogas	6	1.0
 CH4_H2_Mixer	H2	1	0.2
 CH4_H2_Mixer	CH4	1	0.8
 Power_Grid	Electricity	2	1.0
-Biogas_Grid	Biogas	2	0.9999
-CH4_Grid	CH4	2	0.9999
-H2_Grid	H2	2	0.9999
+Biogas_Grid	Biogas	2	1.0
+CH4_Grid	CH4	2	1.0
+H2_Grid	H2	2	1.0
