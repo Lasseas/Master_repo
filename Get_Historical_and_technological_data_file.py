@@ -22,86 +22,7 @@ num_nodesInlastStage = max(num_branches_to_firstStage, num_branches_to_firstStag
 # ------------------------------------------------------------------------------------------------
 
 
-# ------------------------------------------------------------------------------------------------
-
-def generate_time_node_dict(tech_name, nodes, timesteps, reference_data, node_factors):
-    tech_dict = {}
-    for node in nodes:
-        # Get node's factor; default to 1.0 if not provided.
-        factor = node_factors.get(node, 1.0)
-        # Build the dictionary for all timesteps for this node.
-        time_dict = {}
-        for t in timesteps:
-            # If reference_data is a dictionary, retrieve the reference value for this timestep;
-            # otherwise assume it is a constant.
-            if isinstance(reference_data, dict):
-                if isinstance(reference_data.get(node), dict):  # node-specific dict
-                    ref_val = reference_data.get(node, {}).get(t, 0)
-                else:  # timestep-only dict
-                    ref_val = reference_data.get(t, 0)
-            else:
-                ref_val = reference_data
-
-            time_dict[t] = ref_val * factor
-        tech_dict[node] = time_dict
-    return {tech_name: tech_dict}
-
-
-# -------------------------------
-nodes = range(num_firstStageNodes + 1, num_nodes + 1)
-timesteps = range(1, num_timesteps + 1)
-node_factors = {node: random.uniform(0.8, 1.2) for node in nodes}
-# -------------------------------
-
-fuel_name = "Electricity"
-reference_data = {
-        1: 20, 2: 20, 3: 20, 4: 20, 5: 20, 6: 20,
-        7: 20, 8: 20, 9: 20, 10: 20, 11: 20, 12: 20,
-        13: 20, 14: 20, 15: 20, 16: 20, 17: 20, 18: 20,
-        19: 20, 20: 20, 21: 20, 22: 20, 23: 20, 24: 20
-    }
-
-Cost_export = {
-    "Electricity": 0.0,
-    "LT": 0.0,
-    "MT": 0.0,
-    "CH4": 0.0,
-    "Biogas": 0.0,
-    "CH4_H2_Mix": 0.0
-}
-
-
-fuel_name_ref_demand = ["Electricity", "LT", "MT"]
-reference_data_El = {
-        1: 20, 2: 20, 3: 20, 4: 20, 5: 20, 6: 20,
-        7: 20, 8: 20, 9: 20, 10: 20, 11: 20, 12: 20,
-        13: 20, 14: 20, 15: 20, 16: 20, 17: 20, 18: 20,
-        19: 20, 20: 20, 21: 20, 22: 20, 23: 20, 24: 20
-    }
-reference_data_LT = {
-        1: 5, 2: 5, 3: 5, 4: 5, 5: 5, 6: 5,
-        7: 5, 8: 5, 9: 5, 10: 5, 11: 5, 12: 5,
-        13: 5, 14: 5, 15: 5, 16: 5, 17: 5, 18: 5,
-        19: 5, 20: 5, 21: 5, 22: 5, 23: 5, 24: 5
-    }
-reference_data_MT = {
-        1: 2, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2,
-        7: 2, 8: 2, 9: 2, 10: 2, 11: 2, 12: 2,
-        13: 2, 14: 2, 15: 2, 16: 2, 17: 2, 18: 2,
-        19: 2, 20: 2, 21: 2, 22: 2, 23: 2, 24: 2
-    }
-
-ReferenceDemand = {
-    **generate_time_node_dict(fuel_name_ref_demand[0], nodes, timesteps, reference_data_El, node_factors),
-    **generate_time_node_dict(fuel_name_ref_demand[1], nodes, timesteps, reference_data_LT, node_factors),
-    **generate_time_node_dict(fuel_name_ref_demand[2], nodes, timesteps, reference_data_MT, node_factors),
-    "CH4": 0.0,
-    "Biogas": 0.0,
-    "CH4_H2_Mix": 0.0
-}
-
-
-# -------------------------------
+# -----------------------------------------------------------------------------------------------
 
 
 def generate_node_probability(branch_counts):
@@ -234,24 +155,61 @@ for node in sorted(node_to_day):
     print(f"Node {node}: Month = {m:02d}, Day = {d:02d}")
 
 
-# Extract dictionary per price type
-def extract_series_for_price_column(column_name):
-    price_dict = {}
-    for node, (month, day) in node_to_day.items():
-        day_df = day_data_map[(month, day)]
-        price_dict[node] = {t+1: float(day_df[column_name].iloc[t]) for t in range(24)}
-    return price_dict
+# Extract dictionary for reference demand and prices 
 
-# Create dictionaries
-SpotPrice = extract_series_for_price_column("Day-ahead Price (EUR/MWh)")
-IntradayPrice = extract_series_for_price_column("Intraday price (EUR/MWh)")
-ActivationUpPrice = extract_series_for_price_column("Activation price up (mFRR)")
-ActivationDwnPrice = extract_series_for_price_column("Activation price down (mFRR)")
-CapacityUpPrice = extract_series_for_price_column("Capacity price up (mFRR)")
-CapacityDwnPrice = extract_series_for_price_column("Capacity price down (mFRR)")
-PV_data = extract_series_for_price_column("Soldata")
-CapacityUpVolume = extract_series_for_price_column("Cap_Volume_Up")
-CapacityDwnVolume = extract_series_for_price_column("Cap_Volume_Down")
+def extract_series_for_column(columns, node_to_day, day_data_map, all_keys=None, fill_zero_for_missing=True):
+    """
+    Extracts 24-hour time series data for specified columns across nodes.
+
+    Parameters:
+    - columns: list of column names in the Excel file to extract
+    - node_to_day: mapping of node -> (month, day)
+    - day_data_map: mapping of (month, day) -> DataFrame with hourly data
+    - all_keys: list of all expected keys (e.g., all fuels or all price types)
+    - fill_zero_for_missing: if True, fill missing keys with zero time series
+
+    Returns:
+    - Dictionary: {key: {node: {timestep: value}}}
+    """
+    result = {}
+
+    for col in columns:
+        result[col] = {}
+        for node, (month, day) in node_to_day.items():
+            df_day = day_data_map[(month, day)]
+            result[col][node] = {t + 1: float(df_day[col].iloc[t]) for t in range(24)}
+
+    if fill_zero_for_missing and all_keys:
+        for key in all_keys:
+            if key not in result:
+                result[key] = {node: {t: 0.0 for t in range(1, 25)} for node in node_to_day}
+
+    return result
+
+# ✅ Define demand-related inputs
+demand_columns = ["Electricity", "LT", "MT"]
+all_fuels = ["Electricity", "LT", "MT", "H2", "CH4", "Biogas", "CH4_H2_Mix"]
+
+# ✅ Build ReferenceDemand using the unified extractor
+ReferenceDemand = extract_series_for_column(
+    columns=demand_columns,
+    node_to_day=node_to_day,
+    day_data_map=day_data_map,
+    all_keys=all_fuels,
+    fill_zero_for_missing=True
+)
+
+# ✅ Define and extract price-related dictionaries
+SpotPrice = extract_series_for_column(["Day-ahead Price (EUR/MWh)"], node_to_day, day_data_map)["Day-ahead Price (EUR/MWh)"]
+IntradayPrice = extract_series_for_column(["Intraday price (EUR/MWh)"], node_to_day, day_data_map)["Intraday price (EUR/MWh)"]
+ActivationUpPrice = extract_series_for_column(["Activation price up (mFRR)"], node_to_day, day_data_map)["Activation price up (mFRR)"]
+ActivationDwnPrice = extract_series_for_column(["Activation price down (mFRR)"], node_to_day, day_data_map)["Activation price down (mFRR)"]
+CapacityUpPrice = extract_series_for_column(["Capacity price up (mFRR)"], node_to_day, day_data_map)["Capacity price up (mFRR)"]
+CapacityDwnPrice = extract_series_for_column(["Capacity price down (mFRR)"], node_to_day, day_data_map)["Capacity price down (mFRR)"]
+PV_data = extract_series_for_column(["Soldata"], node_to_day, day_data_map)["Soldata"]
+CapacityUpVolume = extract_series_for_column(["Cap_Volume_Up"], node_to_day, day_data_map)["Cap_Volume_Up"]
+CapacityDwnVolume = extract_series_for_column(["Cap_Volume_Down"], node_to_day, day_data_map)["Cap_Volume_Down"]
+
 
 
 #Create Tech_availability:
@@ -271,6 +229,17 @@ Tech_availability = {
     "CH4_H2_Mixer": 1.0
 }
 
+Cost_export = {
+    "Electricity": 0.0,
+    "LT": 0.0,
+    "MT": 0.0,
+    "H2": 150.1502,
+    "CH4": 39.479,
+    "Biogas": 64.5,
+    "CH4_H2_Mix": 0.0
+}
+
+
 
 import pprint
 pprint.pprint(CapacityUpVolume)
@@ -289,3 +258,8 @@ avg_capacity_down = average_dict_values(CapacityDwnVolume)
 
 print(f"Average Capacity Up Price: {avg_capacity_up:.2f} EUR/MW")
 print(f"Average Capacity Down Price: {avg_capacity_down:.2f} EUR/MW")
+
+# Preview one node per fuel
+pprint.pprint({k: list(v.items())[:1] for k, v in ReferenceDemand.items()})
+
+
