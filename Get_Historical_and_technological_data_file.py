@@ -5,8 +5,8 @@ import pandas as pd
 
 # ------------------------------------------------------------------------------------------------
 num_branches_to_firstStage = 2 # Antall grener til det vi i LateX har definert som Omega^first
-num_branches_to_secondStage = 10
-num_branches_to_thirdStage = 0
+num_branches_to_secondStage = 2
+num_branches_to_thirdStage = 2
 num_branches_to_fourthStage = 0
 num_branches_to_fifthStage = 0
 num_branches_to_sixthStage = 0
@@ -229,17 +229,14 @@ Tech_availability = {
     "Biogas_Grid": 0.9,
     "CH4_Grid": 0.8,
     "CH4_H2_Mixer": 1.0,
-    "DieselReserve_Generator": 0.98
+    "DieselReserve_Generator": 0.98,
+    "H2_Grid": 0.8
 }
 
 Cost_export = {
-    "Electricity": 0.0,
-    "LT": 0.0,
-    "MT": 0.0,
-    "H2": 150.1502,
-    "CH4": 39.479,
-    "Biogas": 64.5,
-    "CH4_H2_Mix": 0.0
+    "H2_Grid": 150.1502,
+    "CH4_Grid": 39.479,
+    "Biogas_Grid": 64.5,
 }
 
 

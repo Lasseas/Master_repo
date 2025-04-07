@@ -1,5 +1,5 @@
 Technology	Initial_Installed_Capacity
-Power_Grid	400
+Power_Grid	2000
 ElectricBoiler	0
 HP_LT	0
 HP_MT	0
@@ -10,7 +10,8 @@ GasBoiler	0
 GasBoiler_CCS	0
 CHP	0
 CHP_CCS	0
-Biogas_Grid	400
-CH4_Grid	400
+Biogas_Grid	1000
+CH4_Grid	1000
 CH4_H2_Mixer	0
 DieselReserveGenerator	0
+H2_Grid	1000

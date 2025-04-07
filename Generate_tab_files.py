@@ -10,8 +10,8 @@ from Get_Historical_and_technological_data_file import Cost_export, ReferenceDem
 #####################################################################################
 
 num_branches_to_firstStage = 2 # Antall grener til det vi i LateX har definert som Omega^first
-num_branches_to_secondStage = 10
-num_branches_to_thirdStage = 0
+num_branches_to_secondStage = 2
+num_branches_to_thirdStage = 2
 num_branches_to_fourthStage = 0
 num_branches_to_fifthStage = 0
 num_branches_to_sixthStage = 0
@@ -26,7 +26,7 @@ num_firstStageNodes = num_branches_to_firstStage
 num_nodesInlastStage = max(num_branches_to_firstStage, num_branches_to_firstStage*num_branches_to_secondStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage*num_branches_to_ninthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage*num_branches_to_ninthStage*num_branches_to_tenthStage)
 
 
-technologies = ["Power_Grid", "ElectricBoiler", "HP_LT", "HP_MT", "PV", "P2G", "G2P", "GasBoiler", "GasBoiler_CCS", "CHP", "CHP_CCS", "Biogas_Grid", "CH4_Grid", "CH4_H2_Mixer", "DieselReserveGenerator"]
+technologies = ["Power_Grid", "ElectricBoiler", "HP_LT", "HP_MT", "PV", "P2G", "G2P", "GasBoiler", "GasBoiler_CCS", "CHP", "CHP_CCS", "Biogas_Grid", "CH4_Grid", "CH4_H2_Mixer", "DieselReserveGenerator", "H2_Grid"]
 energy_carriers = ["Electricity", "LT", "MT", "H2", "CH4", "Biogas", "CH4_H2_Mix"]
 StorageTech = ["BESS_Li_Ion_1", "BESS_Redox_1", "CEAS_1", "Flywheel_1", "Hot_Wate_Tank_LT_1", "H2_Storage_1", "CH4_Storage_1"]
 
@@ -45,7 +45,8 @@ Cost_energy = {
     "Biogas_Grid": 64.5, #dobbeltsjekk
     "CH4_Grid": 39.479, #dobbeltsjekk
     "CH4_H2_Mixer": 0,
-    "DieselReserveGenerator": 100 #må sjekkes
+    "DieselReserveGenerator": 100, #må sjekkes
+    "H2_Grid": 150.1502
 }
 
 
@@ -205,16 +206,16 @@ def generate_cost_energy(num_nodes, num_timesteps, technologies, cost_energy, fi
     make_tab_file(filename, data_generator())
 
 
-def generate_cost_export(num_nodes, num_timesteps, energy_carriers, cost_export, filename = "Par_ExportCost.tab"):
+def generate_cost_export(num_nodes, num_timesteps, technologies, cost_export, filename = "Par_ExportCost.tab"):
     def data_generator(chunk_size=10_000_000):
         rows = []
         count = 0
         for node in range(num_firstStageNodes + 1, num_nodes + 1):
-            for ec in energy_carriers:
+            for tech in technologies:
                 for t in range(1, num_timesteps + 1):
-                    ec_cost = cost_export.get(ec, 0.0)
-                    if isinstance(ec_cost, dict) and (node in ec_cost):
-                        node_cost = ec_cost[node]
+                    tech_cost = cost_export.get(tech, 0.0)
+                    if isinstance(tech_cost, dict) and (node in tech_cost):
+                        node_cost = tech_cost[node]
                         if isinstance(node_cost, dict):
                             cost = node_cost.get(t, 0.0)
                         elif isinstance(node_cost, list):
@@ -222,13 +223,13 @@ def generate_cost_export(num_nodes, num_timesteps, energy_carriers, cost_export,
                         else:
                             cost = node_cost
                     else:
-                        if isinstance(ec_cost, dict):
-                            cost = ec_cost.get(t, 0.0)
-                        elif isinstance(ec_cost, list):
-                            cost = ec_cost[t - 1] if len(ec_cost) >= t else 0.0
+                        if isinstance(tech_cost, dict):
+                            cost = tech_cost.get(t, 0.0)
+                        elif isinstance(tech_cost, list):
+                            cost = tech_cost[t - 1] if len(tech_cost) >= t else 0.0
                         else:
-                            cost = ec_cost
-                    rows.append({"Node": node, "Time": t, "EnergyCarrier": ec, "CostExport": cost})
+                            cost = tech_cost
+                    rows.append({"Node": node, "Time": t, "Technology": tech, "CostExport": cost})
                     count += 1
                     if count % chunk_size == 0:
                         yield pd.DataFrame(rows)
@@ -532,7 +533,7 @@ generate_set_of_NodesFirst(num_branches_to_firstStage)
 ##########################################################################
 
 generate_cost_energy(num_nodes, num_timesteps, technologies, Cost_energy)
-generate_cost_export(num_nodes, num_timesteps, energy_carriers, Cost_export)
+generate_cost_export(num_nodes, num_timesteps, technologies, Cost_export)
 generate_CapacityUpPrice(num_nodes, num_timesteps, CapacityUpPrice)
 generate_CapacityDownPrice(num_nodes, num_timesteps, CapacityDwnPrice)
 generate_ActivationUpPrice(num_nodes, num_timesteps, ActivationUpPrice)

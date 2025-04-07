@@ -111,7 +111,7 @@ PARAMETERS
 #Declaring Parameters
 model.Cost_Energy = pyo.Param(model.Nodes, model.Time, model.Technology)  # Cost of using energy source i at time t
 model.Cost_Battery = pyo.Param(model.FlexibleLoad)
-model.Cost_Export = pyo.Param(model.Nodes, model.Time, model.EnergyCarrier)  # Income from exporting energy to the grid at time t
+model.Cost_Export = pyo.Param(model.Nodes, model.Time, model.Technology)  # Income from exporting energy to the grid at time t
 model.Cost_Expansion_Tec = pyo.Param(model.Technology) #Capacity expansion cost
 model.Cost_Expansion_Bat = pyo.Param(model.FlexibleLoad) #Capacity expansion cost
 model.Cost_Emission = pyo.Param() #Carbon price
@@ -132,7 +132,7 @@ model.Max_Storage_Capacity = pyo.Param(model.FlexibleLoad)  # Maximum energy sto
 model.Self_Discharge = pyo.Param(model.FlexibleLoad)  # Self-discharge rate of flexible load b [%]
 model.Initial_SOC = pyo.Param(model.FlexibleLoad)  # Initial state of charge for flexible load b [-]
 model.Node_Probability = pyo.Param(model.Nodes)  # Probability of Nodes s [-]
-model.Max_Cable_Capacity = pyo.Param()  # Maximum capacity of power cable for import/export [MW]
+#model.Max_Cable_Capacity = pyo.Param()  # Maximum capacity of power cable for import/export [MW]
 model.Up_Shift_Max = pyo.Param()  # Maximum allowable up-shifting in load shifting periods as a percentage of demand [% of demand]
 model.Down_Shift_Max = pyo.Param()  # Maximum allowable down-shifting in load shifting periods as a percentage of demand [% of demand]
 model.Initial_Installed_Capacity = pyo.Param(model.Technology) #Initial installed capacity at site for technology i
@@ -145,9 +145,10 @@ model.Activation_Factor_DWN_Regulation = pyo.Param(model.Nodes, model.Time) # Ac
 model.Activation_Factor_ID_Up = pyo.Param(model.Nodes, model.Time) # Activation factor determining the duration of up regulation
 model.Activation_Factor_ID_Dwn = pyo.Param(model.Nodes, model.Time) # Activation factor determining the duration of dwn regulation
 model.Available_Excess_Heat = pyo.Param() #Fraction of the total available excess heat at usable temperature level to \\& be used an energy source for the heat pump.
-model.Energy2Power_Ratio = pyo.Param(model.FlexibleLoad)
+model.Power2Energy_Ratio = pyo.Param(model.FlexibleLoad)
 model.Max_CAPEX_tech = pyo.Param(model.Technology)
 model.Max_CAPEX_flex = pyo.Param(model.FlexibleLoad)
+model.Max_CAPEX = pyo.Param() #Maximum allowable CAPEX
 model.Max_Carbon_Emission = pyo.Param() #Maximum allowable carbon emissions per year
 model.Last_Period_In_Month = pyo.Param(model.Month) #Last period in month m
 
@@ -175,7 +176,7 @@ data.load(filename="Par_MaxStorageCapacity.tab", param=model.Max_Storage_Capacit
 data.load(filename="Par_SelfDischarge.tab", param=model.Self_Discharge, format = "table")
 data.load(filename="Par_InitialSoC.tab", param=model.Initial_SOC, format = "table")
 data.load(filename="Par_NodesProbability.tab", param=model.Node_Probability, format = "table")
-data.load(filename="Par_MaxCableCapacity.tab", param=model.Max_Cable_Capacity, format = "table")
+#data.load(filename="Par_MaxCableCapacity.tab", param=model.Max_Cable_Capacity, format = "table")
 data.load(filename="Par_MaxUpShift.tab", param=model.Up_Shift_Max, format = "table")
 data.load(filename="Par_MaxDwnShift.tab", param=model.Down_Shift_Max, format = "table")
 data.load(filename="Par_InitialCapacityInstalled.tab", param=model.Initial_Installed_Capacity, format = "table")
@@ -187,10 +188,11 @@ data.load(filename="Par_ActivationFactor_Dwn_Reg.tab", param=model.Activation_Fa
 data.load(filename="Par_ActivationFactor_ID_Up_Reg.tab", param=model.Activation_Factor_ID_Up, format = "table")
 data.load(filename="Par_ActivationFactor_ID_Dwn_Reg.tab", param=model.Activation_Factor_ID_Dwn, format = "table")
 data.load(filename="Par_AvailableExcessHeat.tab", param=model.Available_Excess_Heat, format = "table")
-data.load(filename="Par_Energy2Power_ratio.tab", param=model.Energy2Power_Ratio, format = "table")
+data.load(filename="Par_Power2Energy_ratio.tab", param=model.Power2Energy_Ratio, format = "table")
 data.load(filename="Par_Ramping_factor.tab", param=model.Ramping_Factor, format = "table")
 data.load(filename="Par_Max_CAPEX_tec.tab", param=model.Max_CAPEX_tech, format = "table")
 data.load(filename="Par_Max_CAPEX_bat.tab", param=model.Max_CAPEX_flex, format = "table")
+data.load(filename="Par_Max_CAPEX.tab", param=model.Max_CAPEX, format = "table")
 data.load(filename="Par_Max_Carbon_Emission.tab", param=model.Max_Carbon_Emission, format = "table")
 data.load(filename="Par_LastPeriodInMonth.tab", param=model.Last_Period_In_Month, format = "table")
 
@@ -198,8 +200,8 @@ data.load(filename="Par_LastPeriodInMonth.tab", param=model.Last_Period_In_Month
 VARIABLES
 """
 #Declaring Variables
-model.x_UP = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals, bounds = (0,50))
-model.x_DWN = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals, bounds = (0,50))
+model.x_UP = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
+model.x_DWN = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
 model.x_DA_Up = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
 model.x_DA_Dwn = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
 model.x_ID_Up = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
@@ -303,8 +305,9 @@ def cost_opex(model, n, s, t):
                 + model.Carbon_Intensity[i, o] * model.Cost_Emission)
                 for (i, e, o) in model.TechnologyToEnergyCarrier 
             ) 
-            - sum(model.Cost_Export[n, t, e] * model.y_in[n, t, i, e, o] for (i, e, o) in model.EnergyCarrierToTechnology)
+            - sum(model.Cost_Export[n, t, i] * model.y_in[n, t, i, e, o] for (i, e, o) in model.EnergyCarrierToTechnology)
             + sum(model.Cost_Battery[b] * model.q_discharge[n, t, b] for b in model.FlexibleLoad)
+            #Legge til Load shift cost?
     )
 model.OPEXCost = pyo.Constraint(model.Nodes_in_stage, model.Time, rule=cost_opex)
 
@@ -464,7 +467,7 @@ def reserve_down_limit(model, n, p, t, s, e):
         return model.x_DWN[p, t] <= (
             model.Up_Shift_Max * model.Demand[n, t, e]
             + sum(
-                model.Max_charge_discharge_rate[b] + model.Energy2Power_Ratio[b] * model.v_new_bat[b]
+                model.Max_charge_discharge_rate[b] + model.Power2Energy_Ratio[b] * model.v_new_bat[b]
                 for b in model.FlexibleLoad if (b, e) in model.FlexibleLoadForEnergyCarrier
             )
         )
@@ -477,7 +480,7 @@ def reserve_up_limit(model, n, p, t, s, e):
         return model.x_UP[p, t] <= (
             model.Up_Shift_Max * model.Demand[n, t, e]
             + sum(
-                model.Max_charge_discharge_rate[b] + model.Energy2Power_Ratio[b] * model.v_new_bat[b]
+                model.Max_charge_discharge_rate[b] + model.Power2Energy_Ratio[b] * model.v_new_bat[b]
                 for b in model.FlexibleLoad if (b, e) in model.FlexibleLoadForEnergyCarrier
             )
         )
@@ -493,7 +496,7 @@ def flexible_asset_charge_discharge_limit(model, n, s, t, b, e):
     return (
         model.q_charge[n, t, b] 
         + model.q_discharge[n, t, b] / model.Discharge_Efficiency[b] 
-        <= model.Max_charge_discharge_rate[b] + model.Energy2Power_Ratio[b] * model.v_new_bat[b]
+        <= model.Max_charge_discharge_rate[b] + model.Power2Energy_Ratio[b] * model.v_new_bat[b]
     )
 model.FlexibleAssetChargeDischargeLimit = pyo.Constraint(model.Nodes_in_stage, model.Time, model.FlexibleLoadForEnergyCarrier, rule=flexible_asset_charge_discharge_limit)
 
@@ -581,7 +584,7 @@ model.NodeGreaterThanParent = pyo.Constraint(model.Parent_Node, model.Period, mo
 ##############################################################
 ##################### INVESTMENT LIMITATIONS #################
 ##############################################################
-
+"""
 def CAPEX_technology_limitations(model, i):
     return (model.Cost_Expansion_Tec[i] * model.v_new_tech[i] <= model.Max_CAPEX_tech[i])
 model.CAPEXTechnologyLim = pyo.Constraint(model.Technology, rule=CAPEX_technology_limitations)
@@ -589,6 +592,11 @@ model.CAPEXTechnologyLim = pyo.Constraint(model.Technology, rule=CAPEX_technolog
 def CAPEX_flexibleLoad_limitations(model, b):
     return (model.Cost_Expansion_Bat[b] * model.v_new_bat[b] <= model.Max_CAPEX_flex[b])
 model.CAPEXFlexibleLoadLim = pyo.Constraint(model.FlexibleLoad, rule=CAPEX_flexibleLoad_limitations)
+"""
+
+def CAPEX_limitations(model):
+    return model.I_inv <= model.Max_CAPEX
+model.CAPEXLim = pyo.Constraint(rule=CAPEX_limitations)
 
 ##############################################################
 ##################### CARBON EMISSION LIMIT ##################

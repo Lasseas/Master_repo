@@ -14,3 +14,4 @@ Biogas_Grid	1000000.0
 CH4_Grid	1000000.0
 CH4_H2_Mixer	0.0
 DieselReserveGenerator	100.4
+H2_Grid	1000000.0
