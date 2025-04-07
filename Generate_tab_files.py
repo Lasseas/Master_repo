@@ -1,8 +1,7 @@
 import pandas as pd
 import numpy as np
 import random
-from Get_Historical_and_technological_data_file import Cost_export, ReferenceDemand, NodeProbability, Tech_availability, CapacityUpPrice, CapacityDwnPrice, ActivationUpPrice, ActivationDwnPrice, SpotPrice, IntradayPrice
-
+from Get_Historical_and_technological_data_file import Cost_export, ReferenceDemand, NodeProbability, Tech_availability, CapacityUpPrice, CapacityDwnPrice, ActivationUpPrice, ActivationDwnPrice, SpotPrice, IntradayPrice, CostExpansion_Tec, CostExpansion_Bat, CostGridTariff, LastPeriodInMonth
 #####################################################################################
 ################################## KONSTANTE SETT ###################################
 #####################################################################################
@@ -184,6 +183,62 @@ def generate_set_of_Periods(branch_counts, filename = "Set_of_Periods.tab"):
 #####################################################################################
 ########################### PARAMETER GENERATION FUNCTIONS ##########################
 #####################################################################################
+
+# Function to count number of periods from Set_of_Periods.tab
+def get_number_of_periods_from_tab(filepath="Set_of_Periods.tab"):
+    df = pd.read_csv(filepath, sep="\t")
+    return len(df)
+
+# Functions to scale and write .tab files for each parameter
+def generate_Par_CostExpansion_Tec(filename="Par_CostExpansion_Tec.tab"):
+    num_periods = get_number_of_periods_from_tab()
+    rows = [
+        {"Technology": tech, "CostExpansion": cost * num_periods}
+        for tech, cost in CostExpansion_Tec.items()
+    ]
+    df = pd.DataFrame(rows)
+    df.to_csv(filename, sep="\t", index=False, lineterminator='\n')
+    print(f"{filename} saved successfully!")
+
+def generate_Par_CostExpansion_Bat(filename="Par_CostExpansion_Bat.tab"):
+    num_periods = get_number_of_periods_from_tab()
+    rows = [
+        {"StorageTech": bat, "CostExpansion": cost * num_periods}
+        for bat, cost in CostExpansion_Bat.items()
+    ]
+    df = pd.DataFrame(rows)
+    df.to_csv(filename, sep="\t", index=False, lineterminator='\n')
+    print(f"{filename} saved successfully!")
+
+def generate_Par_CostGridTariff(filename="Par_CostGridTariff.tab"):
+    num_periods = get_number_of_periods_from_tab()
+    total_tariff = CostGridTariff * num_periods
+
+    df = pd.DataFrame([{
+        "Tariff": total_tariff
+    }])
+
+    df.to_csv(filename, sep="\t", index=False, lineterminator='\n')
+    print(f"{filename} saved successfully!")
+
+
+def generate_Par_LastPeriodInMonth(filename="Par_LastPeriodInMonth.tab"):
+    num_periods = get_number_of_periods_from_tab()
+    df = pd.DataFrame([{"Month": 1, "LastPeriodInMonth": num_periods}])
+    df.to_csv(filename, sep="\t", index=False, lineterminator='\n')
+    print(f"{filename} saved successfully!")
+
+
+# Call them after Set_of_Periods.tab is created
+generate_Par_CostExpansion_Tec()
+generate_Par_CostExpansion_Bat()
+generate_Par_CostGridTariff()
+generate_Par_LastPeriodInMonth()
+
+##########
+## Additional Parameter generation functions ###
+##########
+
 
 def generate_cost_energy(num_nodes, num_timesteps, technologies, cost_energy, filename = "Par_EnergyCost.tab"):
     def data_generator(chunk_size=10_000_000):

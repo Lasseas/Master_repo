@@ -57,6 +57,48 @@ def generate_node_probability(branch_counts):
 
 NodeProbability = generate_node_probability([num_branches_to_firstStage, num_branches_to_secondStage, num_branches_to_thirdStage, num_branches_to_fourthStage, num_branches_to_fifthStage, num_branches_to_sixthStage, num_branches_to_seventhStage, num_branches_to_eighthStage, num_branches_to_ninthStage, num_branches_to_tenthStage])
 
+###############################################################################
+# ----------------- Parameter data  -----------------
+###############################################################################
+
+# --------------------------
+# Dictionaries
+# --------------------------
+
+CostExpansion_Tec = {
+    "Power_Grid": 1_000_000,
+    "ElectricBoiler": 25,
+    "HP_LT": 247.6,
+    "HP_MT": 297.1,
+    "PV": 186.7,
+    "P2G": 218.6,
+    "G2P": 544.8,
+    "GasBoiler": 13.9,
+    "GasBoiler_CCS": 24.5,
+    "CHP": 277.5,
+    "CHP_CCS": 488.4,
+    "Biogas_Grid": 1_000_000,
+    "CH4_Grid": 1_000_000,
+    "CH4_H2_Mixer": 0,
+    "DieselReserveGenerator": 100.4
+}
+
+CostExpansion_Bat = {
+    "BESS_Li_Ion_1": 265.5,
+    "BESS_Redox_1": 151.6,
+    "CAES_1": 223.4,
+    "Flywheel_1": 106.9,
+    "Hot_Water_Tank_LT_1": 0.8,
+    "H2_Storage_1": 15.1,
+    "CH4_Storage_1": 0.012
+}
+
+CostGridTariff = 123.93
+
+
+LastPeriodInMonth = {
+    1: 2
+}
 
 
 
