@@ -7,7 +7,10 @@ PV
 P2G
 G2P
 GasBoiler
+GasBoiler_CCS
 CHP
+CHP_CCS
 Biogas_Grid
 CH4_Grid
 CH4_H2_Mixer
+DieselReserveGenerator

@@ -1,5 +1,5 @@
 FlexibleLoad	Discharge_efficiency
-BESS_Li_Ion_1	0.975
+BESS_Li_Ion_1	0.97
 BESS_Redox_1	0.78
 CAES_1	0.84
 Flywheel_1	0.99

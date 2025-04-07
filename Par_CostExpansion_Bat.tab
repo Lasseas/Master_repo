@@ -1,8 +1,8 @@
 FlexibleLoads	CostExpansion
-BESS_Li_Ion_1	178.36
-BESS_Redox_1	101.8
-CAES_1	121.4
-Flywheel_1	71.8
-Hot_Water_Tank_LT_1	420.0
-H2_Storage_1	9.5
-CH4_Storage_1	0.007
+BESS_Li_Ion_1	265.5
+BESS_Redox_1	151.6
+CAES_1	223.4
+Flywheel_1	106.9
+Hot_Water_Tank_LT_1	0.8
+H2_Storage_1	15.1
+CH4_Storage_1	0.012

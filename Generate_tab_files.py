@@ -11,7 +11,7 @@ from Get_Historical_and_technological_data_file import Cost_export, ReferenceDem
 
 num_branches_to_firstStage = 2 # Antall grener til det vi i LateX har definert som Omega^first
 num_branches_to_secondStage = 10
-num_branches_to_thirdStage = 5
+num_branches_to_thirdStage = 0
 num_branches_to_fourthStage = 0
 num_branches_to_fifthStage = 0
 num_branches_to_sixthStage = 0
@@ -26,7 +26,7 @@ num_firstStageNodes = num_branches_to_firstStage
 num_nodesInlastStage = max(num_branches_to_firstStage, num_branches_to_firstStage*num_branches_to_secondStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage*num_branches_to_ninthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage*num_branches_to_ninthStage*num_branches_to_tenthStage)
 
 
-technologies = ["Power_Grid", "ElectricBoiler", "HP_LT", "HP_MT", "PV", "P2G", "G2P", "GasBoiler", "CHP", "Biogas_Grid", "CH4_Grid", "CH4_H2_Mixer"]
+technologies = ["Power_Grid", "ElectricBoiler", "HP_LT", "HP_MT", "PV", "P2G", "G2P", "GasBoiler", "GasBoiler_CCS", "CHP", "CHP_CCS", "Biogas_Grid", "CH4_Grid", "CH4_H2_Mixer", "DieselReserveGenerator"]
 energy_carriers = ["Electricity", "LT", "MT", "H2", "CH4", "Biogas", "CH4_H2_Mix"]
 StorageTech = ["BESS_Li_Ion_1", "BESS_Redox_1", "CEAS_1", "Flywheel_1", "Hot_Wate_Tank_LT_1", "H2_Storage_1", "CH4_Storage_1"]
 
@@ -39,10 +39,13 @@ Cost_energy = {
     "P2G": 0,
     "G2P": 0,
     "GasBoiler": 0,
+    "GasBoiler_CCS": 0,
     "CHP": 0,
-    "Biogas_Grid": 64.5,
-    "CH4_Grid": 39.479,
-    "CH4_H2_Mixer": 0
+    "CHP_CCS": 0,
+    "Biogas_Grid": 64.5, #dobbeltsjekk
+    "CH4_Grid": 39.479, #dobbeltsjekk
+    "CH4_H2_Mixer": 0,
+    "DieselReserveGenerator": 100 #må sjekkes
 }
 
 
