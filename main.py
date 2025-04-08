@@ -74,8 +74,6 @@ model.FlexibleLoadForEnergyCarrier = pyo.Set(dimen = 2, ordered = True)
 model.Nodes = pyo.Set(ordered=True) #Set of Nodess
 model.Nodes_in_stage = pyo.Set(dimen = 2, ordered = True) #Subset of Nodess
 model.Nodes_first = pyo.Set(within = model.Nodes) #Subset of Nodess
-#model.Nodes_in_month = pyo.Set(dimen = 2, ordered = True) #Subset of Nodess in month m
-#model.Nodes_in_last_stage_in_month = pyo.Set(dimen = 2, ordered = True) #Subset of Nodess in last stage in month m
 model.Parent = pyo.Set(ordered=True) #Set of parents
 model.Parent_Node = pyo.Set(dimen = 2, ordered = True)
 
@@ -84,8 +82,6 @@ model.Parent_Node = pyo.Set(dimen = 2, ordered = True)
 data.load(filename="Set_of_TimeSteps.tab", format="set", set=model.Time)
 data.load(filename="Set_of_Periods.tab", format="set", set=model.Period)
 data.load(filename="Set_of_LoadShiftingPeriod.tab", format="set", set=model.LoadShiftingPeriod)
-#data.load(filename="Set_of_LoadShiftingInterval.tab", format = "set", set = model.LoadShiftingIntervals)
-#data.load(filename="Subset_LoadShiftWindow.tab", format="set", set=model.TimeLoadShift)
 data.load(filename="Set_of_TimeSteps_NO_LoadShift.tab", format = "set", set=model.Time_NO_LoadShift)
 data.load(filename="Set_of_Month.tab", format = "set", set=model.Month)
 data.load(filename="Set_of_PeriodsInMonth.tab", format = "set", set=model.PeriodInMonth)
@@ -99,8 +95,6 @@ data.load(filename="Set_of_FlexibleLoadForEC.tab", format="set", set=model.Flexi
 data.load(filename="Set_of_Nodes.tab", format="set", set=model.Nodes)
 data.load(filename="Set_of_NodesInStage.tab", format="set", set=model.Nodes_in_stage)
 data.load(filename="Subset_NodesFirst.tab", format="set", set=model.Nodes_first)
-#data.load(filename="Subset_NodesInMonth.tab", format="set", set=model.Nodes_in_month)
-#data.load(filename="Subset_NodesInLastStageInMonth.tab", format="set", set=model.Nodes_in_last_stage_in_month)
 data.load(filename="Set_of_Parents.tab", format="set", set=model.Parent)
 data.load(filename="Set_ParentCoupling.tab", format = "set", set = model.Parent_Node)
 
@@ -132,7 +126,6 @@ model.Max_Storage_Capacity = pyo.Param(model.FlexibleLoad)  # Maximum energy sto
 model.Self_Discharge = pyo.Param(model.FlexibleLoad)  # Self-discharge rate of flexible load b [%]
 model.Initial_SOC = pyo.Param(model.FlexibleLoad)  # Initial state of charge for flexible load b [-]
 model.Node_Probability = pyo.Param(model.Nodes)  # Probability of Nodes s [-]
-#model.Max_Cable_Capacity = pyo.Param()  # Maximum capacity of power cable for import/export [MW]
 model.Up_Shift_Max = pyo.Param()  # Maximum allowable up-shifting in load shifting periods as a percentage of demand [% of demand]
 model.Down_Shift_Max = pyo.Param()  # Maximum allowable down-shifting in load shifting periods as a percentage of demand [% of demand]
 model.Initial_Installed_Capacity = pyo.Param(model.Technology) #Initial installed capacity at site for technology i
@@ -200,8 +193,8 @@ data.load(filename="Par_LastPeriodInMonth.tab", param=model.Last_Period_In_Month
 VARIABLES
 """
 #Declaring Variables
-model.x_UP = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals, bounds = (0,0))
-model.x_DWN = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals, bounds = (0,0))
+model.x_UP = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)#, bounds = (0,0))
+model.x_DWN = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)#, bounds = (0,0))
 model.x_DA_Up = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
 model.x_DA_Dwn = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
 model.x_ID_Up = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
