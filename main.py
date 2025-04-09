@@ -56,6 +56,9 @@ data = pyo.DataPortal() #Loading the data from a data soruce in a uniform manner
 SETS 
 """
 #Declaring Sets
+
+print("Declaring sets...")
+
 model.Time = pyo.Set(ordered=True) #Set of time periods (hours)
 model.Period = pyo.Set(ordered=True) #Set of stages/operational periods
 model.LoadShiftingPeriod = pyo.Set(ordered=True) 
@@ -79,6 +82,8 @@ model.Parent_Node = pyo.Set(dimen = 2, ordered = True)
 
 
 #Reading the Sets, and loading the data
+print("Reading sets...")
+
 data.load(filename="Set_of_TimeSteps.tab", format="set", set=model.Time)
 data.load(filename="Set_of_Periods.tab", format="set", set=model.Period)
 data.load(filename="Set_of_LoadShiftingPeriod.tab", format="set", set=model.LoadShiftingPeriod)
@@ -103,6 +108,8 @@ data.load(filename="Set_ParentCoupling.tab", format = "set", set = model.Parent_
 PARAMETERS
 """
 #Declaring Parameters
+print("Declaring parameters...")
+
 model.Cost_Energy = pyo.Param(model.Nodes, model.Time, model.Technology)  # Cost of using energy source i at time t
 model.Cost_Battery = pyo.Param(model.FlexibleLoad)
 model.Cost_Export = pyo.Param(model.Nodes, model.Time, model.Technology)  # Income from exporting energy to the grid at time t
@@ -144,8 +151,11 @@ model.Max_CAPEX_flex = pyo.Param(model.FlexibleLoad)
 model.Max_CAPEX = pyo.Param() #Maximum allowable CAPEX
 model.Max_Carbon_Emission = pyo.Param() #Maximum allowable carbon emissions per year
 model.Last_Period_In_Month = pyo.Param(model.Month) #Last period in month m
+model.Cost_LS = pyo.Param(model.EnergyCarrier) #Cost of load shifting for energy carrier e
 
 #Reading the Parameters, and loading the data
+print("Reading parameters...")
+
 data.load(filename="Par_EnergyCost.tab", param=model.Cost_Energy, format = "table")
 data.load(filename="Par_BatteryCost.tab", param=model.Cost_Battery, format = "table")
 data.load(filename="Par_ExportCost.tab", param=model.Cost_Export, format = "table")
@@ -188,6 +198,7 @@ data.load(filename="Par_Max_CAPEX_bat.tab", param=model.Max_CAPEX_flex, format =
 data.load(filename="Par_Max_CAPEX.tab", param=model.Max_CAPEX, format = "table")
 data.load(filename="Par_Max_Carbon_Emission.tab", param=model.Max_Carbon_Emission, format = "table")
 data.load(filename="Par_LastPeriodInMonth.tab", param=model.Last_Period_In_Month, format = "table")
+data.load(filename="Par_Cost_LS.tab", param=model.Cost_LS, format = "table")
 
 """
 VARIABLES
@@ -312,7 +323,7 @@ def cost_opex(model, n, s, t):
             ) 
             - sum(model.Cost_Export[n, t, i] * model.y_activity[n, t, i, o] for (i, e, o) in model.EnergyCarrierToTechnology)
             + sum(model.Cost_Battery[b] * model.q_discharge[n, t, b] for b in model.FlexibleLoad)
-            #Legge til Load shift cost?
+            + sum(model.Cost_LS[e]*model.Dwn_Shift[n, t, e] for e in model.EnergyCarrier)
     )
 model.OPEXCost = pyo.Constraint(model.Nodes_in_stage, model.Time, rule=cost_opex)
 
@@ -416,7 +427,7 @@ def heat_pump_input_limitation(model, n, s, t):
         model.y_out[n, t, 'HP_MT', 'MT', 1] - model.y_in[n, t, 'HP_MT', 'Electricity', 1] 
         + model.y_out[n, t, 'HP_MT', 'LT', 2] - model.y_in[n, t, 'HP_MT', 'Electricity', 2] 
         + model.y_out[n, t, 'HP_LT', 'LT', 1] - model.y_in[n, t, 'HP_LT', 'Electricity', 1]
-        <= model.Available_Excess_Heat * (model.d_flex[n, t, 'MT'] + model.d_flex[n, t, 'MT'])
+        <= model.Available_Excess_Heat * (model.d_flex[n, t, 'LT'] + model.d_flex[n, t, 'MT'])
     )
 model.HeatPumpInputLimitation = pyo.Constraint(model.Nodes_in_stage, model.Time, rule=heat_pump_input_limitation)
 
@@ -634,10 +645,13 @@ def Carbon_Emission_Limit(model, n, s):
         for o in model.Mode_of_operation if (i,o) in model.Carbon_Intensity) for i in model.Technology) for t in model.Time) <= model.Max_Carbon_Emission
 model.CarbonEmissionLimit = pyo.Constraint(model.Nodes_in_stage, rule=Carbon_Emission_Limit)
 
+print("Objective and constraints read...")
 
 """
 MATCHING DATA FROM CASE WITH MATHEMATICAL MODEL AND PRINTING DATA
 """
+print("Building instance...")
+
 our_model = model.create_instance(data)   
 our_model.dual = pyo.Suffix(direction=pyo.Suffix.IMPORT) #Import dual values into solver results
 import pdb; pdb.set_trace()
@@ -645,6 +659,8 @@ import pdb; pdb.set_trace()
 """
 SOLVING PROBLEM
 """
+print("Solving...")
+
 opt = SolverFactory("gurobi", Verbose=True)
 #opt.options['LogFile'] = 'gurobi_log.txt'
 
@@ -660,6 +676,7 @@ running_time = end_time - start_time
 """
 DISPLAY RESULTS??
 """
+print("Writing results to .csv...")
 
 our_model.display('results.csv')
 our_model.dual.display()
@@ -682,6 +699,7 @@ print("-" * 70)
 """
 EXTRACT VALUE OF VARIABLES AND WRITE THEM INTO EXCEL FILE
 """
+print("Writing results to .xlsx...")
 
 def save_results_to_excel(model_instance, filename="Variable_Results.xlsx"):
     
