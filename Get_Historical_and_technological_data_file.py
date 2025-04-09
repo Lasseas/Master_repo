@@ -74,7 +74,7 @@ CostExpansion_Tec = {
     "P2G": 218.6,
     "G2P": 544.8,
     "GasBoiler": 13.9,
-    "GasBoiler_CCS": 24.5,
+    "GasBoiler_CCS": 224.8,
     "CHP": 277.5,
     "CHP_CCS": 488.4,
     "Biogas_Grid": 1_000_000,
