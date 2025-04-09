@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import random
-from Get_Historical_and_technological_data_file import Cost_export, ReferenceDemand, NodeProbability, Tech_availability, CapacityUpPrice, CapacityDwnPrice, ActivationUpPrice, ActivationDwnPrice, SpotPrice, IntradayPrice, CostExpansion_Tec, CostExpansion_Bat, CostGridTariff, LastPeriodInMonth
+from Get_Historical_and_technological_data_file import Cost_export, ReferenceDemand, NodeProbability, Tech_availability, CapacityUpPrice, CapacityDwnPrice, ActivationUpPrice, ActivationDwnPrice, SpotPrice, IntradayPrice, CostExpansion_Tec, CostExpansion_Bat, CostGridTariff, LastPeriodInMonth, CapacityDwnVolume, CapacityUpVolume
 #####################################################################################
 ################################## KONSTANTE SETT ###################################
 #####################################################################################
@@ -571,6 +571,42 @@ def generate_ActivationFactorID_Dwn(num_nodes, num_timesteps, p_id_up = 0.3, p_i
     
     make_tab_file(filename, data_generator())
 
+def generate_CapacityUpVolume(num_nodes, num_timesteps, CapacityUpVolume, filename="Par_CapacityUpVolume.tab"):
+    def data_generator(chunk_size=10_000_000):
+        rows = []
+        count = 0
+        for node in range(1, num_nodes - num_nodesInlastStage + 1):
+            node_data = CapacityUpVolume.get(node, {})
+            for t in range(1, num_timesteps + 1):
+                volume = node_data.get(t, 0.0)
+                rows.append({"Node": node, "Time": t, "CapacityUpVolume": volume})
+                count += 1
+                if count % chunk_size == 0:
+                    yield pd.DataFrame(rows)
+                    rows = []
+        if rows:
+            yield pd.DataFrame(rows)
+    make_tab_file(filename, data_generator())
+
+
+def generate_CapacityDownVolume(num_nodes, num_timesteps, CapacityDwnVolume, filename="Par_CapacityDownVolume.tab"):
+    def data_generator(chunk_size=10_000_000):
+        rows = []
+        count = 0
+        for node in range(1, num_nodes - num_nodesInlastStage + 1):
+            node_data = CapacityDwnVolume.get(node, {})
+            for t in range(1, num_timesteps + 1):
+                volume = node_data.get(t, 0.0)
+                rows.append({"Node": node, "Time": t, "CapacityDownVolume": volume})
+                count += 1
+                if count % chunk_size == 0:
+                    yield pd.DataFrame(rows)
+                    rows = []
+        if rows:
+            yield pd.DataFrame(rows)
+    make_tab_file(filename, data_generator())
+
+
 
 ##########################################################################
 ########################### GENERATE SETS ################################
@@ -601,4 +637,6 @@ generate_availability_factor(num_nodes, num_timesteps, technologies, Tech_availa
 generate_joint_regulation_activation_files(num_nodes, num_timesteps, p_up=0.4, p_down=0.4)
 generate_ActivationFactorID_UP(num_nodes, num_timesteps, p_id_up=0.3, p_id_down=0.2)
 generate_ActivationFactorID_Dwn(num_nodes, num_timesteps, p_id_up=0.3, p_id_down=0.2)
+generate_CapacityDownVolume(num_nodes, num_timesteps, CapacityDwnVolume)
+generate_CapacityUpVolume(num_nodes, num_timesteps, CapacityUpVolume)
 

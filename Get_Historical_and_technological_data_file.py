@@ -302,5 +302,7 @@ print(f"Average Capacity Down Price: {avg_capacity_down:.2f} EUR/MW")
 
 # Preview one node per fuel
 pprint.pprint({k: list(v.items())[:1] for k, v in ReferenceDemand.items()})
+pprint.pprint({k: list(v.items())[:1] for k, v in CapacityDwnVolume.items()})
+
 
 
