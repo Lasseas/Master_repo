@@ -133,8 +133,8 @@ model.Max_Storage_Capacity = pyo.Param(model.FlexibleLoad)  # Maximum energy sto
 model.Self_Discharge = pyo.Param(model.FlexibleLoad)  # Self-discharge rate of flexible load b [%]
 model.Initial_SOC = pyo.Param(model.FlexibleLoad)  # Initial state of charge for flexible load b [-]
 model.Node_Probability = pyo.Param(model.Nodes)  # Probability of Nodes s [-]
-model.Up_Shift_Max = pyo.Param()  # Maximum allowable up-shifting in load shifting periods as a percentage of demand [% of demand]
-model.Down_Shift_Max = pyo.Param()  # Maximum allowable down-shifting in load shifting periods as a percentage of demand [% of demand]
+model.Up_Shift_Max = pyo.Param(model.Time)  # Maximum allowable up-shifting in load shifting periods as a percentage of demand [% of demand]
+model.Down_Shift_Max = pyo.Param(model.Time)  # Maximum allowable down-shifting in load shifting periods as a percentage of demand [% of demand]
 model.Initial_Installed_Capacity = pyo.Param(model.Technology) #Initial installed capacity at site for technology i
 model.Ramping_Factor = pyo.Param(model.Technology)
 model.Availability_Factor = pyo.Param(model.Nodes, model.Time, model.Technology) #Availability factor for technology delivering to energy carrier 
@@ -347,6 +347,10 @@ def energy_balance(model, n, s, t, e):
     )
 model.EnergyBalance = pyo.Constraint(model.Nodes_in_stage, model.Time, model.EnergyCarrier, rule=energy_balance)
 
+def Defining_flexible_demand(model, n, s, t, e):
+    return model.d_flex[n, t, e] == model.Demand[n, t, e] + model.Up_Shift[n, t, e] - model.Dwn_Shift[n, t, e]
+model.DefiningFlexibleDemand = pyo.Constraint(model.Nodes_in_stage, model.Time, model.EnergyCarrier, rule = Defining_flexible_demand)
+
 #####################################################################################
 ########################### MARKET BALANCE DA/ID/RT #################################
 #####################################################################################
@@ -459,6 +463,7 @@ def initialize_aggregated_dwn_shift(model, n, e):
     return model.aggregated_Dwn_Shift[n, e] == 0
 model.InitializeAggregatedDwnShift = pyo.Constraint(model.Nodes_first, model.EnergyCarrier, rule=initialize_aggregated_dwn_shift)
 
+"""
 def No_Up_Shift_outside_window(model, n, s, t, e):
     if (t,s) in model.Time_NO_LoadShift:
         return model.Up_Shift[n, t, e] == 0
@@ -472,18 +477,25 @@ def No_Dwn_Shift_outside_window(model, n, s, t, e):
     else:
         return pyo.Constraint.Skip
 model.NoDwnShiftOutsideWindow = pyo.Constraint(model.Nodes_in_stage, model.Time, model.EnergyCarrier, rule=No_Dwn_Shift_outside_window)
-
-def Defining_flexible_demand(model, n, s, t, e):
-    return model.d_flex[n, t, e] == model.Demand[n, t, e] + model.Up_Shift[n, t, e] - model.Dwn_Shift[n, t, e]
-model.DefiningFlexibleDemand = pyo.Constraint(model.Nodes_in_stage, model.Time, model.EnergyCarrier, rule = Defining_flexible_demand)
+"""
 
 ###########################################################
 ############## MAX ALLOWABLE UP/DOWN SHIFT ################
 ###########################################################
 
+def max_up_shift(model, n, s, t, e):
+    return model.Up_Shift[n, t, e] <= model.Up_Shift_Max[t] * model.Demand[n, t, e]    
+model.MaxUpShift = pyo.Constraint(model.Nodes_in_stage, model.Time, model.EnergyCarrier, rule=max_up_shift)
+
+def max_dwn_shift(model, n, s, t, e):
+    return model.Dwn_Shift[n, t, e] <= model.Down_Shift_Max[t] * model.Demand[n, t, e]
+model.MaxDwnShift = pyo.Constraint(model.Nodes_in_stage, model.Time, model.EnergyCarrier, rule=max_dwn_shift)
+
+"""
 def Max_total_up_dwn_load_shift(model, n, s, t, e):
     return model.Up_Shift[n,t,e] + model.Dwn_Shift[n,t,e] <= model.Up_Shift_Max * model.Demand[n, t, e] 
 model.MaxTotalUpDwnLoadShift = pyo.Constraint(model.Nodes_in_stage, model.Time, model.EnergyCarrier, rule=Max_total_up_dwn_load_shift)
+"""
 
 ########################################################################
 ############## RESERVE MARKET PARTICIPATION LIMITS #####################
@@ -492,7 +504,7 @@ model.MaxTotalUpDwnLoadShift = pyo.Constraint(model.Nodes_in_stage, model.Time, 
 def reserve_down_limit(model, n, p, t, s, e):
     if e == "Electricity" and (n,s) in model.Nodes_in_stage:  # Ensure e = EL
         return model.x_DWN[p, t] <= (
-            model.Up_Shift_Max * model.Demand[n, t, e]
+            model.Up_Shift_Max[t] * model.Demand[n, t, e]
             + sum(
                 model.Max_charge_discharge_rate[b] + model.Power2Energy_Ratio[b] * model.v_new_bat[b]
                 for b in model.FlexibleLoad if (b, e) in model.FlexibleLoadForEnergyCarrier
@@ -505,7 +517,7 @@ model.ReserveDownLimit = pyo.Constraint(model.Parent_Node, model.Time, model.Per
 def reserve_up_limit(model, n, p, t, s, e):
     if e == "Electricity" and (n,s) in model.Nodes_in_stage:  # Ensure e = EL
         return model.x_UP[p, t] <= (
-            model.Up_Shift_Max * model.Demand[n, t, e]
+            model.Down_Shift_Max[t] * model.Demand[n, t, e]
             + sum(
                 model.Max_charge_discharge_rate[b] + model.Power2Energy_Ratio[b] * model.v_new_bat[b]
                 for b in model.FlexibleLoad if (b, e) in model.FlexibleLoadForEnergyCarrier
@@ -514,6 +526,18 @@ def reserve_up_limit(model, n, p, t, s, e):
     else:
         return pyo.Constraint.Skip
 model.ReserveUpLimit = pyo.Constraint(model.Parent_Node, model.Time, model.Period, model.EnergyCarrier, rule=reserve_up_limit)
+
+########################################################################
+############## UPPER-UPPER BOUND CAPACITY MARKET BIDS ##################
+########################################################################
+
+def max_capacity_up_bid(model, n, t):
+    return model.x_UP[n,t] <= 50
+model.MaxCapacityUpBid = pyo.Constraint(model.Nodes, model.Time, rule=max_capacity_up_bid)
+
+def max_capacity_down_bid(model, n, t):
+    return model.x_DWN[n,t] <= 50
+model.MaxCapacityDownBid = pyo.Constraint(model.Nodes, model.Time, rule=max_capacity_down_bid)
 
 ########################################################################
 ############## FLEXIBLE ASSET CONSTRAINTS/STORAGE DYNAMICS #############

@@ -44,7 +44,7 @@ Cost_energy = {
     "Biogas_Grid": 64.5, #dobbeltsjekk
     "CH4_Grid": 39.479, #dobbeltsjekk
     "CH4_H2_Mixer": 0,
-    "DieselReserveGenerator": 100, #må sjekkes
+    "DieselReserveGenerator": 148.8,
     "H2_Grid": 150.1502
 }
 
