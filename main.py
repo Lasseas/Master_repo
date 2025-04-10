@@ -152,6 +152,10 @@ model.Max_CAPEX = pyo.Param() #Maximum allowable CAPEX
 model.Max_Carbon_Emission = pyo.Param() #Maximum allowable carbon emissions per year
 model.Last_Period_In_Month = pyo.Param(model.Month) #Last period in month m
 model.Cost_LS = pyo.Param(model.EnergyCarrier) #Cost of load shifting for energy carrier e
+model.ID_Cap_Buy_volume = pyo.Param(model.Nodes, model.Time) #Volume of ID total bought in the market
+model.ID_Cap_Sell_volume = pyo.Param(model.Nodes, model.Time) #Volume of ID total sold in the market
+model.Res_Cap_Up_volume = pyo.Param(model.Nodes, model.Time) #Volume of total mFRR up shift in the market
+model.Res_Cap_Down_volume = pyo.Param(model.Nodes, model.Time) #Volume of total mFRR down shift in the market
 
 #Reading the Parameters, and loading the data
 print("Reading parameters...")
@@ -199,6 +203,11 @@ data.load(filename="Par_Max_CAPEX.tab", param=model.Max_CAPEX, format = "table")
 data.load(filename="Par_Max_Carbon_Emission.tab", param=model.Max_Carbon_Emission, format = "table")
 data.load(filename="Par_LastPeriodInMonth.tab", param=model.Last_Period_In_Month, format = "table")
 data.load(filename="Par_Cost_LS.tab", param=model.Cost_LS, format = "table")
+data.load(filename="Par_ID_Capacity_Buy_Volume.tab", param=model.ID_Cap_Buy_volume, format = "table")
+data.load(filename="Par_ID_Capacity_Sell_Volume.tab", param=model.ID_Cap_Sell_volume, format = "table")
+data.load(filename="Par_Res_CapacityUpVolume.tab", param=model.Res_Cap_Up_volume, format = "table")
+data.load(filename="Par_Res_CapacityDownVolume.tab", param=model.Res_Cap_Down_volume, format = "table")
+
 
 """
 VARIABLES
@@ -369,13 +378,21 @@ def market_balance_export(model, n, p, t, s, i, e, o):
         return pyo.Constraint.Skip      
 model.MarketBalanceExport = pyo.Constraint(model.Parent_Node, model.Time, model.Period, model.EnergyCarrierToTechnology, rule = market_balance_export)
 
-def Max_ID_Adjustment(model, n, t):
+def Max_ID_Buy_Adjustment(model, n, t):
     nodes_in_last_stage = {n for (n, stage) in model.Nodes_in_stage if stage == model.Period.last()}
     if n not in nodes_in_last_stage:
-        return (model.x_ID_Up[n, t] + model.x_ID_Dwn[n, t] <= 10)
+        return (model.x_ID_Up[n, t] <= 0.5*model.ID_Cap_Buy_volume[n, t])
     else:
         return pyo.Constraint.Skip
-model.MaxIDAdjustment = pyo.Constraint(model.Nodes, model.Time, rule = Max_ID_Adjustment)
+model.MaxIDBuyAdjustment = pyo.Constraint(model.Nodes, model.Time, rule = Max_ID_Buy_Adjustment)
+
+def Max_ID_Sell_Adjustment(model, n, t):
+    nodes_in_last_stage = {n for (n, stage) in model.Nodes_in_stage if stage == model.Period.last()}
+    if n not in nodes_in_last_stage:
+        return (model.x_ID_Dwn[n, t] <= 0.5*model.ID_Cap_Sell_volume[n, t])
+    else:
+        return pyo.Constraint.Skip
+model.MaxIDSellAdjustment = pyo.Constraint(model.Nodes, model.Time, rule = Max_ID_Sell_Adjustment)
 
 #####################################################################################
 ########################### CONVERSION BALANCE ######################################
@@ -539,10 +556,17 @@ def max_capacity_down_bid(model, n, t):
     return model.x_DWN[n,t] <= 50
 model.MaxCapacityDownBid = pyo.Constraint(model.Nodes, model.Time, rule=max_capacity_down_bid)
 
+def maximum_market_down_reserve_limit(model, n, t):
+    return model.x_DWN[n,t] <= 0.5*model.Res_Cap_Down_volume[n,t] #Limiting 
+model.MaxMarketDownReserveLimit = pyo.Constraint(model.Nodes, model.Time, rule=maximum_market_down_reserve_limit)
+
+def maximum_market_up_reserve_limit(model, n, t):
+    return model.x_UP[n,t] <= 0.5*model.Res_Cap_Up_volume[n,t]
+model.MaxMarketUpReserveLimit = pyo.Constraint(model.Nodes, model.Time, rule=maximum_market_up_reserve_limit)
+
 ########################################################################
 ############## FLEXIBLE ASSET CONSTRAINTS/STORAGE DYNAMICS #############
 ########################################################################
-
 def flexible_asset_charge_discharge_limit(model, n, s, t, b, e):
     return (
         model.q_charge[n, t, b] 

@@ -177,6 +177,7 @@ parent_month_mapping = {
 # Extend parent_month_mapping assignment to parent nodes as well
 node_to_day = {}
 
+# For grupper med foreldre (vanlige tilfeller)
 for parent, child_nodes in mapping_converted.items():
     allowed_months = parent_month_mapping.get(parent, [1, 2, 3])
     valid_days = [d for d in day_data_map if d[0] in allowed_months]
@@ -184,10 +185,19 @@ for parent, child_nodes in mapping_converted.items():
     if not valid_days:
         raise ValueError(f"No valid historical days for months {allowed_months} in parent group {parent}")
 
-    # Assign a different random day to each node including the parent
-    all_nodes = [parent] + child_nodes  # Include parent itself
+    all_nodes = [parent] + child_nodes
     for node in all_nodes:
         node_to_day[node] = random.choice(valid_days)
+
+# ➕ Legg til førstestegsnoder manuelt basert på parent_month_mapping
+for node in range(1, num_firstStageNodes + 1):
+    allowed_months = parent_month_mapping.get(node, [1, 2, 3])
+    valid_days = [d for d in day_data_map if d[0] in allowed_months]
+    
+    if not valid_days:
+        raise ValueError(f"No valid historical days for months {allowed_months} for first-stage node {node}")
+    
+    node_to_day[node] = random.choice(valid_days)
 
 # Print assignment (month and day) for traceability
 print("\n📅 Random day selected for each node:")
@@ -248,8 +258,13 @@ ActivationDwnPrice = extract_series_for_column(["Activation price down (mFRR)"],
 CapacityUpPrice = extract_series_for_column(["Capacity price up (mFRR)"], node_to_day, day_data_map)["Capacity price up (mFRR)"]
 CapacityDwnPrice = extract_series_for_column(["Capacity price down (mFRR)"], node_to_day, day_data_map)["Capacity price down (mFRR)"]
 PV_data = extract_series_for_column(["Soldata"], node_to_day, day_data_map)["Soldata"]
-CapacityUpVolume = extract_series_for_column(["Cap_Volume_Up"], node_to_day, day_data_map)["Cap_Volume_Up"]
-CapacityDwnVolume = extract_series_for_column(["Cap_Volume_Down"], node_to_day, day_data_map)["Cap_Volume_Down"]
+Res_CapacityUpVolume = extract_series_for_column(["Res_Cap_Volume_Up"], node_to_day, day_data_map)["Res_Cap_Volume_Up"]
+Res_CapacityDwnVolume = extract_series_for_column(["Res_Cap_Volume_Down"], node_to_day, day_data_map)["Res_Cap_Volume_Down"]
+ID_Capacity_Sell_Volume = extract_series_for_column(["ID_Cap_Volume_Sell"], node_to_day, day_data_map)["ID_Cap_Volume_Sell"]
+ID_Capacity_Buy_Volume = extract_series_for_column(["ID_Cap_Volume_Buy"], node_to_day, day_data_map)["ID_Cap_Volume_Buy"]
+
+
+
 
 
 
@@ -283,7 +298,6 @@ Cost_export = {
 
 
 import pprint
-pprint.pprint(CapacityUpVolume)
 
 def average_dict_values(nested_dict):
     total = 0
@@ -294,15 +308,16 @@ def average_dict_values(nested_dict):
             count += 1
     return total / count if count > 0 else 0
 
-avg_capacity_up = average_dict_values(CapacityUpVolume)
-avg_capacity_down = average_dict_values(CapacityDwnVolume)
+avg_capacity_up = average_dict_values(Res_CapacityUpVolume)
+avg_capacity_down = average_dict_values(Res_CapacityDwnVolume)
 
 print(f"Average Capacity Up Price: {avg_capacity_up:.2f} EUR/MW")
 print(f"Average Capacity Down Price: {avg_capacity_down:.2f} EUR/MW")
 
 # Preview one node per fuel
 pprint.pprint({k: list(v.items())[:1] for k, v in ReferenceDemand.items()})
-pprint.pprint({k: list(v.items())[:1] for k, v in CapacityDwnVolume.items()})
+pprint.pprint({k: list(v.items())[:1] for k, v in Res_CapacityDwnVolume.items()})
+pprint.pprint({k: list(v.items())[:1] for k, v in ID_Capacity_Buy_Volume.items()})
 
 
 
