@@ -215,10 +215,10 @@ VARIABLES
 #Declaring Variables
 model.x_UP = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)#, bounds = (0,0))
 model.x_DWN = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)#, bounds = (0,0))
-model.x_DA_Up = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
-model.x_DA_Dwn = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
-model.x_ID_Up = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
-model.x_ID_Dwn = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
+model.x_DA_buy = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
+model.x_DA_sell = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
+model.x_ID_buy = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
+model.x_ID_sell = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
 model.y_out = pyo.Var(model.Nodes, model.Time, model.TechnologyToEnergyCarrier, domain = pyo.NonNegativeReals)
 model.y_in = pyo.Var(model.Nodes, model.Time, model.EnergyCarrierToTechnology, domain = pyo.NonNegativeReals)
 model.y_activity = pyo.Var(model.Nodes, model.Time, model.Technology, model.Mode_of_operation, domain = pyo.NonNegativeReals)
@@ -275,6 +275,10 @@ def cost_investment(model):
     ))
 model.InvestmentCost = pyo.Constraint(rule=cost_investment)
 
+def cost_grid_tariff(model):
+    return model.I_GT == sum(sum(model.Node_Probability[n] * model.Cost_Grid * model.y_max[n, m] for (n,s) in model.Nodes_in_stage if s == model.Last_Period_In_Month[m]) for m in model.Month)
+model.GridTariffCost = pyo.Constraint(rule=cost_grid_tariff)
+
 def cost_capacity_bid(model, t):
     nodes_in_last_stage = {n for (n, stage) in model.Nodes_in_stage if stage == model.Period.last()}
     
@@ -284,7 +288,6 @@ def cost_capacity_bid(model, t):
                model.aFRR_Dwn_Capacity_Price[n, t] * model.x_DWN[n, t])
         ) for n in model.Nodes if n not in nodes_in_last_stage
     )
-
 model.CapacityBidCost = pyo.Constraint(model.Time, rule=cost_capacity_bid)
 
 def cost_activation(model, n, p, t, s):
@@ -297,7 +300,7 @@ model.ActivationCost = pyo.Constraint(model.Parent_Node, model.Time, model.Perio
 
 def cost_DA(model, n, p, t, s):
     if (n,s) in model.Nodes_in_stage:
-        return model.I_DA[n, t] == model.Spot_Price[n, t] * (model.x_DA_Up[p, t] - model.x_DA_Dwn[p, t])
+        return model.I_DA[n, t] == model.Spot_Price[n, t] * (model.x_DA_buy[p, t] - model.x_DA_sell[p, t])
     else:
         return pyo.Constraint.Skip
 model.DACost = pyo.Constraint(model.Parent_Node, model.Time, model.Period, rule=cost_DA) 
@@ -305,8 +308,8 @@ model.DACost = pyo.Constraint(model.Parent_Node, model.Time, model.Period, rule=
 def cost_ID(model, n, p, t, s):
     if (n,s) in model.Nodes_in_stage:
         return model.I_ID[n, t] == model.Intraday_Price[n, t] * (
-                model.Activation_Factor_ID_Up[n, t] * model.x_ID_Up[p, t] 
-                - model.Activation_Factor_ID_Dwn[n, t] * model.x_ID_Dwn[p, t]
+                model.Activation_Factor_ID_Up[n, t] * model.x_ID_buy[p, t] 
+                - model.Activation_Factor_ID_Dwn[n, t] * model.x_ID_sell[p, t]
             )
     else:
         return pyo.Constraint.Skip
@@ -336,9 +339,7 @@ def cost_opex(model, n, s, t):
     )
 model.OPEXCost = pyo.Constraint(model.Nodes_in_stage, model.Time, rule=cost_opex)
 
-def cost_grid_tariff(model):
-    return model.I_GT == sum(sum(model.Node_Probability[n] * model.Cost_Grid * model.y_max[n, m] for (n,s) in model.Nodes_in_stage if s == model.Last_Period_In_Month[m]) for m in model.Month)
-model.GridTariffCost = pyo.Constraint(rule=cost_grid_tariff)
+
 
 ###########################################
 ############## ENERGY BALANCE #############
@@ -366,14 +367,14 @@ model.DefiningFlexibleDemand = pyo.Constraint(model.Nodes_in_stage, model.Time, 
 
 def market_balance_import(model, n, p, t, s, i, e, o):
     if (i, e, o) == ("Power_Grid", "Electricity", 1) and (n,s) in model.Nodes_in_stage:
-        return (model.y_out[n, t, i, e, o] == model.x_DA_Up[p, t] + model.Activation_Factor_ID_Up[n,t]*model.x_ID_Up[p, t] + model.Activation_Factor_DWN_Regulation[n, t] * model.x_DWN[p, t])
+        return (model.y_out[n, t, i, e, o] == model.x_DA_buy[p, t] + model.Activation_Factor_ID_Up[n,t]*model.x_ID_buy[p, t] + model.Activation_Factor_DWN_Regulation[n, t] * model.x_DWN[p, t])
     else:
         return pyo.Constraint.Skip      
 model.MarketBalanceImport = pyo.Constraint(model.Parent_Node, model.Time, model.Period, model.TechnologyToEnergyCarrier, rule = market_balance_import)
 
 def market_balance_export(model, n, p, t, s, i, e, o):
     if (i, e, o) == ("Power_Grid", "Electricity", 2) and (n,s) in model.Nodes_in_stage:
-        return (model.y_in[n, t, i, e, o] == model.x_DA_Dwn[p, t] + model.Activation_Factor_ID_Dwn[n,t]*model.x_ID_Dwn[p, t] + model.Activation_Factor_UP_Regulation[n, t] * model.x_UP[p, t])
+        return (model.y_in[n, t, i, e, o] == model.x_DA_sell[p, t] + model.Activation_Factor_ID_Dwn[n,t]*model.x_ID_sell[p, t] + model.Activation_Factor_UP_Regulation[n, t] * model.x_UP[p, t])
     else:
         return pyo.Constraint.Skip      
 model.MarketBalanceExport = pyo.Constraint(model.Parent_Node, model.Time, model.Period, model.EnergyCarrierToTechnology, rule = market_balance_export)
@@ -381,7 +382,7 @@ model.MarketBalanceExport = pyo.Constraint(model.Parent_Node, model.Time, model.
 def Max_ID_Buy_Adjustment(model, n, t):
     nodes_in_last_stage = {n for (n, stage) in model.Nodes_in_stage if stage == model.Period.last()}
     if n not in nodes_in_last_stage:
-        return (model.x_ID_Up[n, t] <= 0.5*model.ID_Cap_Buy_volume[n, t])
+        return (model.x_ID_buy[n, t] <= 0.5*model.ID_Cap_Buy_volume[n, t])
     else:
         return pyo.Constraint.Skip
 model.MaxIDBuyAdjustment = pyo.Constraint(model.Nodes, model.Time, rule = Max_ID_Buy_Adjustment)
@@ -389,7 +390,7 @@ model.MaxIDBuyAdjustment = pyo.Constraint(model.Nodes, model.Time, rule = Max_ID
 def Max_ID_Sell_Adjustment(model, n, t):
     nodes_in_last_stage = {n for (n, stage) in model.Nodes_in_stage if stage == model.Period.last()}
     if n not in nodes_in_last_stage:
-        return (model.x_ID_Dwn[n, t] <= 0.5*model.ID_Cap_Sell_volume[n, t])
+        return (model.x_ID_sell[n, t] <= 0.5*model.ID_Cap_Sell_volume[n, t])
     else:
         return pyo.Constraint.Skip
 model.MaxIDSellAdjustment = pyo.Constraint(model.Nodes, model.Time, rule = Max_ID_Sell_Adjustment)
