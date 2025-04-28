@@ -549,6 +549,8 @@ def generate_activation_factors(num_nodes, num_timesteps, parent_mapping, activa
 ################################################################################################
 ########################### ACTIVATION FACTORS FOR ALU-INDUSTRY ################################
 ################################################################################################
+# Krever ca. 50 branches for 30% aktiveringsrate med 8t hviletid - Færre branches krever activation_rate.
+# For få branches vil gi en feilmelding (For få tilgjengelige barn...), så bare å prøve seg frem:)
 """
 def generate_activation_factors(num_nodes, num_timesteps, parent_mapping, activation_rate=0.30, rest_hours=8):
    
