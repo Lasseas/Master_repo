@@ -154,6 +154,26 @@ print("Førstestegs-forelder : -> [alle etterkommere]:")
 mapping_converted = {int(k): [int(x) for x in v] for k, v in mapping.items()}
 print(mapping_converted)
 
+####################################################################################
+########################### GET PARENT MAPPING FUNC #################################
+#####################################################################################
+def create_parent_mapping(filepath):
+    """
+    Leser en .tab-fil med kolonnene 'Node' og 'Parent',
+    og returnerer en parent_mapping som et Python-dictionary.
+    """
+    # Les filen
+    df = pd.read_csv(filepath, sep="\t")
+    
+    # Sjekk at nødvendige kolonner finnes
+    if not {"Node", "Parent"}.issubset(df.columns):
+        raise ValueError("Filen må inneholde kolonnene 'Node' og 'Parent'.")
+
+    # Lag parent_mapping
+    parent_mapping = dict(zip(df["Node"], df["Parent"]))
+    
+    return parent_mapping
+
 
 # ----------------- HISTORICAL PRICE DATA HANDLING -----------------
 
@@ -323,4 +343,4 @@ pprint.pprint({k: list(v.items())[:1] for k, v in Res_CapacityDwnVolume.items()}
 pprint.pprint({k: list(v.items())[:1] for k, v in ID_Capacity_Buy_Volume.items()})
 
 
-
+parent_mapping = create_parent_mapping("Set_ParentCoupling.tab")

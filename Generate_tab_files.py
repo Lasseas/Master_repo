@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import random
-from Get_Historical_and_technological_data_file import Cost_export, ReferenceDemand, NodeProbability, Tech_availability, CapacityUpPrice, CapacityDwnPrice, ActivationUpPrice, ActivationDwnPrice, SpotPrice, IntradayPrice, CostExpansion_Tec, CostExpansion_Bat, CostGridTariff, LastPeriodInMonth, Res_CapacityDwnVolume, Res_CapacityUpVolume, ID_Capacity_Buy_Volume, ID_Capacity_Sell_Volume 
+from Get_Historical_and_technological_data_file import Cost_export, ReferenceDemand, NodeProbability, Tech_availability, CapacityUpPrice, CapacityDwnPrice, ActivationUpPrice, ActivationDwnPrice, SpotPrice, IntradayPrice, CostExpansion_Tec, CostExpansion_Bat, CostGridTariff, LastPeriodInMonth, Res_CapacityDwnVolume, Res_CapacityUpVolume, ID_Capacity_Buy_Volume, ID_Capacity_Sell_Volume, parent_mapping
 #####################################################################################
 ################################## KONSTANTE SETT ###################################
 #####################################################################################
@@ -492,34 +492,63 @@ def generate_availability_factor(num_nodes, num_timesteps, technologies, tech_av
     make_tab_file(filename, data_generator())
 
 
-def generate_joint_activation_factors(num_nodes, num_timesteps, p_up = 0.4, p_down = 0.4):
-    if p_up + p_down > 1.0:
-        raise ValueError("p_up + p_down must not exceed 1.0")
+
+def generate_activation_factors(num_nodes, num_timesteps, parent_mapping, activation_rate=0.8):
+    """
+    activation_rate = andel av barnenodene som skal være aktive (enten opp eller ned) i hver time.
+    """
+    parent_to_children = {}
+    for child, parent in parent_mapping.items():
+        parent_to_children.setdefault(parent, []).append(child)
 
     rows = []
-    # Process nodes beyond the first-stage nodes.
-    for node in range(num_firstStageNodes + 1, num_nodes + 1):
-        for t in range(1, num_timesteps + 1):
-            r = random.random()
-            if r < p_up:
-                up, down = 1, 0
-            elif r < (p_up + p_down):
-                up, down = 0, 1
-            else:
-                up, down = 0, 0
 
-            rows.append({
-                "Node": node,
-                "Time": t,
-                "ActivationFactorUpReg": up,
-                "ActivationFactorDownReg": down
-            })
+    for parent, children in parent_to_children.items():
+        for t in range(1, num_timesteps + 1):
+            num_children = len(children)
+            if num_children < 2:
+                raise ValueError(f"Forelder {parent} har for få barn til å sikre både opp- og nedregulering i time {t}")
+
+            # Hvor mange barn skal aktiveres denne timen?
+            num_active = max(2, int(activation_rate * num_children))  # minst 2 (én opp, én ned)
+            
+            active_children = random.sample(children, num_active)
+
+            # Plukk én for opp, én for ned
+            random.shuffle(active_children)
+            child_up = active_children.pop()
+            child_down = active_children.pop()
+
+            activation = {}
+
+            for child in children:
+                if child == child_up:
+                    activation[child] = (1, 0)
+                elif child == child_down:
+                    activation[child] = (0, 1)
+                elif child in active_children:
+                    # Fordel tilfeldig opp eller ned på resten av de aktive
+                    if random.random() < 0.5:
+                        activation[child] = (1, 0)
+                    else:
+                        activation[child] = (0, 1)
+                else:
+                    # Ikke aktivert
+                    activation[child] = (0, 0)
+
+            for child, (up, down) in activation.items():
+                rows.append({
+                    "Node": child,
+                    "Time": t,
+                    "ActivationFactorUpReg": up,
+                    "ActivationFactorDownReg": down
+                })
 
     return pd.DataFrame(rows)
 
 
-def generate_joint_regulation_activation_files(num_nodes, num_timesteps, p_up = 0.4, p_down = 0.4, up_filename = "Par_ActivationFactor_Up_Reg.tab", down_filename = "Par_ActivationFactor_Dwn_Reg.tab"):
-    df_joint = generate_joint_activation_factors(num_nodes, num_timesteps, p_up, p_down)
+def generate_joint_regulation_activation_files(num_nodes, num_timesteps, up_filename = "Par_ActivationFactor_Up_Reg.tab", down_filename = "Par_ActivationFactor_Dwn_Reg.tab"):
+    df_joint = generate_activation_factors(num_nodes, num_timesteps, parent_mapping)
 
     # Write UpReg file
     def data_generator_up():
@@ -668,7 +697,7 @@ generate_IntradayPrice(num_nodes, num_timesteps, IntradayPrice)
 generate_ReferenceDemand(num_nodes, num_timesteps, energy_carriers, ReferenceDemand)
 generate_NodeProbability(num_nodes, NodeProbability)
 generate_availability_factor(num_nodes, num_timesteps, technologies, Tech_availability)
-generate_joint_regulation_activation_files(num_nodes, num_timesteps, p_up=0.4, p_down=0.4)
+generate_joint_regulation_activation_files(num_nodes, num_timesteps)
 generate_ActivationFactorID_UP(num_nodes, num_timesteps, p_id_up=0.3, p_id_down=0.2)
 generate_ActivationFactorID_Dwn(num_nodes, num_timesteps, p_id_up=0.3, p_id_down=0.2)
 generate_Res_CapacityDownVolume(num_nodes, num_timesteps, Res_CapacityDwnVolume)
