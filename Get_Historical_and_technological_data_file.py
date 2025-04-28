@@ -4,7 +4,7 @@ import random
 import pandas as pd
 
 # ------------------------------------------------------------------------------------------------
-# ----------------- State which case to run -----------------
+# ----------------- State which case to run here -----------------
 excel_path = "NO1_Aluminum_2024_combined historical data.xlsx"
 #excel_path = "NO1_Pulp_Paper_2024_combined historical data.xlsx"
 
@@ -241,8 +241,8 @@ def extract_series_for_column(columns, node_to_day, day_data_map, all_keys=None,
     return result
 
 # ✅ Define demand-related inputs
-demand_columns = ["Electricity", "LT", "MT", "HT"]
-all_fuels = ["Electricity", "LT", "MT", "HT" "H2", "CH4", "Biogas", "CH4_H2_Mix"]
+demand_columns = ["Electricity", "LT", "MT"]
+all_fuels = ["Electricity", "LT", "MT", "H2", "CH4", "Biogas", "CH4_H2_Mix"]
 
 # ✅ Build ReferenceDemand using the unified extractor
 ReferenceDemand = extract_series_for_column(
