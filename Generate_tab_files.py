@@ -8,10 +8,10 @@ from Get_Historical_and_technological_data_file import Cost_export, ReferenceDem
 #################### HUSK Å ENDRE DISSE I DE ANDRE FILENE OGSÅ ######################
 #####################################################################################
 
-num_branches_to_firstStage = 4 # Antall grener til det vi i LateX har definert som Omega^first
-num_branches_to_secondStage = 2
-num_branches_to_thirdStage = 2
-num_branches_to_fourthStage = 2
+num_branches_to_firstStage = 2 # Antall grener til det vi i LateX har definert som Omega^first
+num_branches_to_secondStage = 50
+num_branches_to_thirdStage = 0
+num_branches_to_fourthStage = 0
 num_branches_to_fifthStage = 0
 num_branches_to_sixthStage = 0
 num_branches_to_seventhStage = 0
@@ -494,9 +494,9 @@ def generate_availability_factor(num_nodes, num_timesteps, technologies, tech_av
 
 
 def generate_activation_factors(num_nodes, num_timesteps, parent_mapping, activation_rate=0.8):
-    """
-    activation_rate = andel av barnenodene som skal være aktive (enten opp eller ned) i hver time.
-    """
+    
+    #activation_rate = andel av barnenodene som skal være aktive (enten opp eller ned) i hver time.
+    
     parent_to_children = {}
     for child, parent in parent_mapping.items():
         parent_to_children.setdefault(parent, []).append(child)
@@ -545,6 +545,71 @@ def generate_activation_factors(num_nodes, num_timesteps, parent_mapping, activa
                 })
 
     return pd.DataFrame(rows)
+
+################################################################################################
+########################### ACTIVATION FACTORS FOR ALU-INDUSTRY ################################
+################################################################################################
+"""
+def generate_activation_factors(num_nodes, num_timesteps, parent_mapping, activation_rate=0.30, rest_hours=8):
+   
+    #Generate activation factors with 8 hours rest after activation.
+    
+    parent_to_children = {}
+    for child, parent in parent_mapping.items():
+        parent_to_children.setdefault(parent, []).append(child)
+
+    rows = []
+    
+    # Track when each child node becomes available again
+    available_from = {child: 1 for child in parent_mapping.keys()}  # Starter som tilgjengelig fra time 1
+
+    for parent, children in parent_to_children.items():
+        for t in range(1, num_timesteps + 1):
+            # Filter children that are available at time t
+            available_children = [child for child in children if available_from[child] <= t]
+
+            if len(available_children) < 2:
+                raise ValueError(f"For få tilgjengelige barn for forelder {parent} ved time {t} for å sikre aktivering.")
+
+            # Hvor mange skal aktiveres
+            num_children = len(available_children)
+            num_active = max(2, int(activation_rate * num_children))  # minst 2
+
+            active_children = random.sample(available_children, min(num_active, num_children))
+
+            random.shuffle(active_children)
+            child_up = active_children.pop()
+            child_down = active_children.pop()
+
+            activation = {}
+
+            for child in children:
+                if child == child_up:
+                    activation[child] = (1, 0)
+                    available_from[child] = t + rest_hours + 1  # Låst i 8 timer etter aktivering
+                elif child == child_down:
+                    activation[child] = (0, 1)
+                    available_from[child] = t + rest_hours + 1
+                elif child in active_children:
+                    if random.random() < 0.5:
+                        activation[child] = (1, 0)
+                    else:
+                        activation[child] = (0, 1)
+                    available_from[child] = t + rest_hours + 1
+                else:
+                    activation[child] = (0, 0)
+
+            # Logg aktiveringer
+            for child, (up, down) in activation.items():
+                rows.append({
+                    "Node": child,
+                    "Time": t,
+                    "ActivationFactorUpReg": up,
+                    "ActivationFactorDownReg": down
+                })
+
+    return pd.DataFrame(rows)
+"""
 
 
 def generate_joint_regulation_activation_files(num_nodes, num_timesteps, up_filename = "Par_ActivationFactor_Up_Reg.tab", down_filename = "Par_ActivationFactor_Dwn_Reg.tab"):
