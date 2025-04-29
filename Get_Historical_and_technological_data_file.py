@@ -5,13 +5,13 @@ import pandas as pd
 
 # ------------------------------------------------------------------------------------------------
 # ----------------- State which case to run here -----------------
-excel_path = "NO1_Aluminum_2024_combined historical data.xlsx"
-#excel_path = "NO1_Pulp_Paper_2024_combined historical data.xlsx"
+#excel_path = "NO1_Aluminum_2024_combined historical data.xlsx"
+excel_path = "NO1_Pulp_Paper_2024_combined historical data.xlsx"
 
-num_branches_to_firstStage = 4 # Antall grener til det vi i LateX har definert som Omega^first
-num_branches_to_secondStage = 2
-num_branches_to_thirdStage = 2
-num_branches_to_fourthStage = 2
+num_branches_to_firstStage = 2 # Antall grener til det vi i LateX har definert som Omega^first
+num_branches_to_secondStage = 4
+num_branches_to_thirdStage = 4
+num_branches_to_fourthStage = 0
 num_branches_to_fifthStage = 0
 num_branches_to_sixthStage = 0
 num_branches_to_seventhStage = 0
@@ -189,12 +189,18 @@ day_data_map = {
 }
 
 # ---- Replace the manual node_month_ranges with parent-group-based logic ----
-
+"""
 parent_month_mapping = {
     1: [12, 1, 2],
     2: [3, 4, 5],
     3: [6, 7, 8],
     4: [9, 10, 11],
+}
+"""
+
+parent_month_mapping = {
+    1: [4,5,6,7,8,9],
+    2: [1,2,3,10,11,12],
 }
 
 # Extend parent_month_mapping assignment to parent nodes as well

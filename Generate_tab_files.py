@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import random
-from Get_Historical_and_technological_data_file import Cost_export, ReferenceDemand, NodeProbability, Tech_availability, CapacityUpPrice, CapacityDwnPrice, ActivationUpPrice, ActivationDwnPrice, SpotPrice, IntradayPrice, CostExpansion_Tec, CostExpansion_Bat, CostGridTariff, LastPeriodInMonth, Res_CapacityDwnVolume, Res_CapacityUpVolume, ID_Capacity_Buy_Volume, ID_Capacity_Sell_Volume, parent_mapping
+from Get_Historical_and_technological_data_file import Cost_export, ReferenceDemand, NodeProbability, Tech_availability, CapacityUpPrice, CapacityDwnPrice, ActivationUpPrice, ActivationDwnPrice, SpotPrice, IntradayPrice, CostExpansion_Tec, CostExpansion_Bat, CostGridTariff, LastPeriodInMonth, Res_CapacityDwnVolume, Res_CapacityUpVolume, ID_Capacity_Buy_Volume, ID_Capacity_Sell_Volume, parent_mapping, excel_path
 #####################################################################################
 ################################## KONSTANTE SETT ###################################
 #####################################################################################
@@ -9,8 +9,8 @@ from Get_Historical_and_technological_data_file import Cost_export, ReferenceDem
 #####################################################################################
 
 num_branches_to_firstStage = 2 # Antall grener til det vi i LateX har definert som Omega^first
-num_branches_to_secondStage = 50
-num_branches_to_thirdStage = 0
+num_branches_to_secondStage = 4
+num_branches_to_thirdStage = 4
 num_branches_to_fourthStage = 0
 num_branches_to_fifthStage = 0
 num_branches_to_sixthStage = 0
@@ -551,8 +551,8 @@ def generate_activation_factors(num_nodes, num_timesteps, parent_mapping, activa
 ################################################################################################
 # Krever ca. 50 branches for 30% aktiveringsrate med 8t hviletid - Færre branches krever activation_rate.
 # For få branches vil gi en feilmelding (For få tilgjengelige barn...), så bare å prøve seg frem:)
-"""
-def generate_activation_factors(num_nodes, num_timesteps, parent_mapping, activation_rate=0.30, rest_hours=8):
+
+def generate_activation_factors_with_rest_time(num_nodes, num_timesteps, parent_mapping, activation_rate=0.30, rest_hours=8):
    
     #Generate activation factors with 8 hours rest after activation.
     
@@ -611,11 +611,16 @@ def generate_activation_factors(num_nodes, num_timesteps, parent_mapping, activa
                 })
 
     return pd.DataFrame(rows)
-"""
+
 
 
 def generate_joint_regulation_activation_files(num_nodes, num_timesteps, up_filename = "Par_ActivationFactor_Up_Reg.tab", down_filename = "Par_ActivationFactor_Dwn_Reg.tab"):
-    df_joint = generate_activation_factors(num_nodes, num_timesteps, parent_mapping)
+    if excel_path == "NO1_Pulp_Paper_2024_combined historical data.xlsx":
+        df_joint = generate_activation_factors(num_nodes, num_timesteps, parent_mapping)
+    elif excel_path == "NO1_Aluminum_2024_combined historical data.xlsx":
+        df_joint = generate_activation_factors_with_rest_time(num_nodes, num_timesteps, parent_mapping, activation_rate=0.30, rest_hours=8)
+    else:
+        raise ValueError("Invalid excel_path. Please provide a valid path.")
 
     # Write UpReg file
     def data_generator_up():
