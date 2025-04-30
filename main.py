@@ -197,8 +197,8 @@ data.load(filename="Par_ActivationFactor_ID_Dwn_Reg.tab", param=model.Activation
 data.load(filename="Par_AvailableExcessHeat.tab", param=model.Available_Excess_Heat, format = "table")
 data.load(filename="Par_Power2Energy_ratio.tab", param=model.Power2Energy_Ratio, format = "table")
 data.load(filename="Par_Ramping_factor.tab", param=model.Ramping_Factor, format = "table")
-data.load(filename="Par_Max_Capex_tec.tab", param=model.Max_CAPEX_tech, format = "table")
-data.load(filename="Par_Max_Capex_bat.tab", param=model.Max_CAPEX_flex, format = "table")
+data.load(filename="Par_Max_CAPEX_tec.tab", param=model.Max_CAPEX_tech, format = "table")
+data.load(filename="Par_Max_CAPEX_bat.tab", param=model.Max_CAPEX_flex, format = "table")
 data.load(filename="Par_Max_CAPEX.tab", param=model.Max_CAPEX, format = "table")
 data.load(filename="Par_Max_Carbon_Emission.tab", param=model.Max_Carbon_Emission, format = "table")
 data.load(filename="Par_LastPeriodInMonth.tab", param=model.Last_Period_In_Month, format = "table")
@@ -757,6 +757,15 @@ def save_results_to_excel(model_instance, filename="Variable_Results.xlsx"):
     
     import pandas as pd
     from pyomo.environ import value
+    # Ensure xlsxwriter is installed
+    try:
+        import xlsxwriter
+    except ImportError:
+        import subprocess
+        import sys
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "xlsxwriter"])
+        import xlsxwriter  # try again after installing
+
 
     # Create an Excel writer object
     with pd.ExcelWriter(filename, engine="xlsxwriter") as writer:
