@@ -763,8 +763,14 @@ def save_results_to_excel(model_instance, filename="Variable_Results.xlsx"):
     except ImportError:
         import subprocess
         import sys
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "xlsxwriter"])
-        import xlsxwriter  # try again after installing
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", "xlsxwriter"])
+
+        import site
+        site.ENABLE_USER_SITE = True
+        site.addsitedir(site.getusersitepackages())
+
+        import xlsxwriter
+
 
 
     # Create an Excel writer object
