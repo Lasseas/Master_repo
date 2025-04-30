@@ -10,6 +10,27 @@ import platform
 #import psutil
 from pyomo.environ import *
 
+#####################################################################################
+################################## KONSTANTE SETT ###################################
+#####################################################################################
+#################### HUSK Å ENDRE DISSE I DE ANDRE FILENE OGSÅ ######################
+#####################################################################################
+#excel_path = "NO1_Aluminum_2024_combined historical data.xlsx"
+excel_path = "NO1_Pulp_Paper_2024_combined historical data.xlsx"
+instance = 1                    # state which instance you would like to run for
+year = 2025                     # state which year you would like to run for
+
+num_branches_to_firstStage = 2 # Antall grener til det vi i LateX har definert som Omega^first
+num_branches_to_secondStage = 4
+num_branches_to_thirdStage = 4
+num_branches_to_fourthStage = 0
+num_branches_to_fifthStage = 0
+num_branches_to_sixthStage = 0
+num_branches_to_seventhStage = 0
+num_branches_to_eighthStage = 0
+num_branches_to_ninthStage = 0
+num_branches_to_tenthStage = 0
+
 ##################################################################################
 ############################### READING EXCEL FILE ###############################
 ##################################################################################
@@ -165,7 +186,29 @@ data.load(filename="Par_BatteryCost.tab", param=model.Cost_Battery, format = "ta
 data.load(filename="Par_ExportCost.tab", param=model.Cost_Export, format = "table")
 data.load(filename="Par_CostExpansion_Tec.tab", param=model.Cost_Expansion_Tec, format = "table")
 data.load(filename="Par_CostExpansion_Bat.tab", param=model.Cost_Expansion_Bat, format = "table")
-data.load(filename="Par_CostEmission.tab", param=model.Cost_Emission, format = "table")
+if instance == 1 and year == 2025:
+    data.load(filename="Par_CostEmission_1_2025.tab", param=model.Cost_Emission, format = "table")
+elif instance == 1 and year == 2050:
+    data.load(filename="Par_CostEmission_1_2050.tab", param=model.Cost_Emission, format = "table")
+elif instance == 2 and year == 2025:
+    data.load(filename="Par_CostEmission_2_2025.tab", param=model.Cost_Emission, format = "table")
+elif instance == 2 and year == 2050:
+    data.load(filename="Par_CostEmission_2_2050.tab", param=model.Cost_Emission, format = "table")
+elif instance == 3 and year == 2025:
+    data.load(filename="Par_CostEmission_3_2025.tab", param=model.Cost_Emission, format = "table")
+elif instance == 3 and year == 2050:
+    data.load(filename="Par_CostEmission_3_2050.tab", param=model.Cost_Emission, format = "table")
+elif instance == 4 and year == 2025:
+    data.load(filename="Par_CostEmission_4_2025.tab", param=model.Cost_Emission, format = "table")
+elif instance == 4 and year == 2050:
+    data.load(filename="Par_CostEmission_4_2050.tab", param=model.Cost_Emission, format = "table")
+elif instance == 5 and year == 2025:
+    data.load(filename="Par_CostEmission_5_2025.tab", param=model.Cost_Emission, format = "table")
+elif instance == 5 and year == 2050:
+    data.load(filename="Par_Cost_Emission_5_2050.tab", param=model.Cost_Emission, format = "table")
+else:
+    ValueError("Invalid instance or year. Please check the values.")
+
 data.load(filename="Par_CostGridTariff.tab", param=model.Cost_Grid, format = "table")
 data.load(filename="Par_aFRR_UP_CAP_price.tab", param=model.aFRR_Up_Capacity_Price, format = "table")
 data.load(filename="Par_aFRR_DWN_CAP_price.tab", param=model.aFRR_Dwn_Capacity_Price, format = "table")
@@ -710,8 +753,13 @@ SOLVING PROBLEM
 """
 print("Solving...")
 
+# === Create Results folder ===
+results_folder = "Results"
+os.makedirs(results_folder, exist_ok=True)
+
 opt = SolverFactory("gurobi", Verbose=True)
-#opt.options['LogFile'] = 'gurobi_log.txt'
+opt.options['LogFile'] = os.path.join(results_folder, 'gurobi_log.txt')
+
 
 #start the timer
 start_time = time.time()
@@ -721,6 +769,12 @@ results = opt.solve(our_model, tee=True)
 #stop the timer
 end_time = time.time()
 running_time = end_time - start_time
+
+# Extract Gurobi solver information
+solver_stats = results.solver
+
+# Get the number of simplex iterations
+simplex_iterations = solver_stats.statistics.number_of_iterations if hasattr(solver_stats.statistics, 'number_of_iterations') else "Unavailable"
 
 """
 DISPLAY RESULTS??
@@ -742,6 +796,19 @@ print(f"System: {platform.system()} {platform.release()}")
 #print(f"Total Memory: {psutil.virtual_memory().total / 1e9:.2f} GB")
 print("-" * 70)
 #import pdb; pdb.set_trace()
+
+
+
+# === Write runtime info to .txt ===
+runtime_log = f"""Solver Runtime Log
+--------------------
+Total Solving Time (end time - start time): {running_time:.2f} seconds
+
+Simplex Iterations: {simplex_iterations}
+"""
+
+with open(os.path.join(results_folder, "runtime_log.txt"), "w") as f:
+    f.write(runtime_log)
 
 
 
@@ -809,7 +876,43 @@ def save_results_to_excel(model_instance, filename="Variable_Results.xlsx"):
     print(f"Variable results saved to {filename}")
 
 # Usage after solving the model
-save_results_to_excel(our_model, filename="Variable_Results.xlsx")
+save_results_to_excel(our_model, filename=os.path.join(results_folder, "Variable_Results.xlsx"))
+
+
+# === Write case and objective summary ===
+
+# Get the objective value
+objective_value = pyo.value(our_model.Objective)
+num_Nodes = len(our_model.Nodes) if hasattr(our_model, "Nodes") else "Unknown"
+
+
+# Create contents
+case_and_objective_content = f"""Case and Objective Summary
+-----------------------------
+Excel path: {excel_path}
+instance: {instance}
+year: {year}
+
+Number of branches per stage:
+- Stage 1: {num_branches_to_firstStage}
+- Stage 2: {num_branches_to_secondStage}
+- Stage 3: {num_branches_to_thirdStage}
+- Stage 4: {num_branches_to_fourthStage}
+- Stage 5: {num_branches_to_fifthStage}
+- Stage 6: {num_branches_to_sixthStage}
+- Stage 7: {num_branches_to_seventhStage}
+- Stage 8: {num_branches_to_eighthStage}
+- Stage 9: {num_branches_to_ninthStage}
+- Stage 10: {num_branches_to_tenthStage}
+
+
+Number of Nodes: {num_Nodes}
+Objective Value: {objective_value:.2f}
+"""
+
+# Save it to the Results folder
+with open(os.path.join("Results", "case_and_objective_info.txt"), "w") as f:
+    f.write(case_and_objective_content)
 
 
 """

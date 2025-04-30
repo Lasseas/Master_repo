@@ -1,0 +1,21 @@
+Case and Objective Summary
+-----------------------------
+Excel path: NO1_Pulp_Paper_2024_combined historical data.xlsx
+instance: 1
+year: 2025
+
+Number of branches per stage:
+- Stage 1: 2
+- Stage 2: 4
+- Stage 3: 4
+- Stage 4: 0
+- Stage 5: 0
+- Stage 6: 0
+- Stage 7: 0
+- Stage 8: 0
+- Stage 9: 0
+- Stage 10: 0
+
+
+Number of Nodes: 42
+Objective Value: 184645.88

@@ -3,10 +3,15 @@
 import random
 import pandas as pd
 
-# ------------------------------------------------------------------------------------------------
-# ----------------- State which case to run here -----------------
+#####################################################################################
+################################## KONSTANTE SETT ###################################
+#####################################################################################
+#################### HUSK Å ENDRE DISSE I DE ANDRE FILENE OGSÅ ######################
+#####################################################################################
 #excel_path = "NO1_Aluminum_2024_combined historical data.xlsx"
 excel_path = "NO1_Pulp_Paper_2024_combined historical data.xlsx"
+instance = 1                    # state which instance you would like to run for
+year = 2025                     # state which year you would like to run for
 
 num_branches_to_firstStage = 2 # Antall grener til det vi i LateX har definert som Omega^first
 num_branches_to_secondStage = 4
@@ -68,35 +73,200 @@ NodeProbability = generate_node_probability([num_branches_to_firstStage, num_bra
 # --------------------------
 # Dictionaries
 # --------------------------
+if instance == 1: #Expected value
+    if year == 2025:
+        CostExpansion_Tec = {
+            "Power_Grid": 1_000_000,
+            "ElectricBoiler": 24.987,
+            "HP_LT": 247.605,
+            "HP_MT": 297.126,
+            "PV": 186.679,
+            "P2G": 218.605,
+            "G2P": 544.750,
+            "GasBoiler": 13.946,
+            "GasBoiler_CCS": 224.866,
+            "CHP": 277.527,
+            "CHP_CCS": 488.447,
+            "Biogas_Grid": 1_000_000,
+            "CH4_Grid": 1_000_000,
+            "CH4_H2_Mixer": 0,
+            "DieselReserveGenerator": 100.412,
+            "H2_Grid": 1_000_000
+        }
+        
 
-CostExpansion_Tec = {
-    "Power_Grid": 1_000_000,
-    "ElectricBoiler": 25,
-    "HP_LT": 247.6,
-    "HP_MT": 297.1,
-    "PV": 186.7,
-    "P2G": 218.6,
-    "G2P": 544.8,
-    "GasBoiler": 13.9,
-    "GasBoiler_CCS": 224.8,
-    "CHP": 277.5,
-    "CHP_CCS": 488.4,
-    "Biogas_Grid": 1_000_000,
-    "CH4_Grid": 1_000_000,
-    "CH4_H2_Mixer": 0,
-    "DieselReserveGenerator": 100.4,
-    "H2_Grid": 1_000_000
-}
+        CostExpansion_Bat = {
+            "BESS_Li_Ion_1": 265.537,
+            "BESS_Redox_1": 151.599,
+            "CAES_1": 223.435,
+            "Flywheel_1": 106.917,
+            "Hot_Water_Tank_LT_1": 0.773,
+            "H2_Storage_1": 15.113,
+            "CH4_Storage_1": 0.01152
+        }
+    elif year == 2050:
+        CostExpansion_Tec = {
+            "Power_Grid": 1_000_000,
+            "ElectricBoiler": 23.32091,
+            "HP_LT": 210.08913,
+            "HP_MT": 252.10696,
+            "PV": 106.30327,
+            "P2G": 92.60185,
+            "G2P": 363.16676,
+            "GasBoiler": 12.67824,
+            "GasBoiler_CCS": 218.29897,
+            "CHP": 270.55360,
+            "CHP_CCS": 476.17433,
+            "Biogas_Grid": 1_000_000,
+            "CH4_Grid": 1_000_000,
+            "CH4_H2_Mixer": 0,
+            "DieselReserveGenerator": 100.41164,
+            "H2_Grid": 1_000_000
+        }
+        
+        CostExpansion_Bat = {
+            "BESS_Li_Ion_1": 81.38463,
+            "BESS_Redox_1": 105.32128,
+            "CAES_1": 216.66465,
+            "Flywheel_1": 106.91706,
+            "Hot_Water_Tank_LT_1": 0.77324,
+            "H2_Storage_1": 6.22870,
+            "CH4_Storage_1": 0.01152
+        }
 
-CostExpansion_Bat = {
-    "BESS_Li_Ion_1": 265.5,
-    "BESS_Redox_1": 151.6,
-    "CAES_1": 223.4,
-    "Flywheel_1": 106.9,
-    "Hot_Water_Tank_LT_1": 0.8,
-    "H2_Storage_1": 15.1,
-    "CH4_Storage_1": 0.012
-}
+    else:
+        raise ValueError("Invalid year. Please choose either 2025 or 2050.")
+
+elif instance == 2 or instance == 5: #Lowerbound
+    if year == 2025:
+        CostExpansion_Tec = {
+            "Power_Grid": 1_000_000,
+            "ElectricBoiler": 19.989,
+            "HP_LT": 198.084,
+            "HP_MT": 237.701,
+            "PV": 149.343,
+            "P2G": 174.884,
+            "G2P": 435.800,
+            "GasBoiler": 11.157,
+            "GasBoiler_CCS": 179.893,
+            "CHP": 222.021,
+            "CHP_CCS": 390.757,
+            "Biogas_Grid": 1_000_000,
+            "CH4_Grid": 1_000_000,
+            "CH4_H2_Mixer": 0,
+            "DieselReserveGenerator": 80.329,
+            "H2_Grid": 1_000_000
+        }
+        
+        CostExpansion_Bat = {
+            "BESS_Li_Ion_1": 212.430,
+            "BESS_Redox_1": 121.279,
+            "CAES_1": 178.748,
+            "Flywheel_1": 85.534,
+            "Hot_Water_Tank_LT_1": 0.619,
+            "H2_Storage_1": 12.091,
+            "CH4_Storage_1": 0.00922
+        }
+    elif year == 2050:
+        CostExpansion_Tec = {
+            "Power_Grid": 1_000_000,
+            "ElectricBoiler": 18.65673,
+            "HP_LT": 168.07130,
+            "HP_MT": 201.68556,
+            "PV": 85.04262,
+            "P2G": 74.08148,
+            "G2P": 290.53340,
+            "GasBoiler": 10.14259,
+            "GasBoiler_CCS": 174.63918,
+            "CHP": 216.44288,
+            "CHP_CCS": 380.93946,
+            "Biogas_Grid": 1_000_000,
+            "CH4_Grid": 1_000_000,
+            "CH4_H2_Mixer": 0,
+            "DieselReserveGenerator": 80.32932,
+            "H2_Grid": 1_000_000
+        }
+
+        CostExpansion_Bat = {
+            "BESS_Li_Ion_1": 65.10770,
+            "BESS_Redox_1": 84.25703,
+            "CAES_1": 173.33172,
+            "Flywheel_1": 85.53365,
+            "Hot_Water_Tank_LT_1": 0.61860,
+            "H2_Storage_1": 4.98296,
+            "CH4_Storage_1": 0.00922
+        }
+
+    else:
+        raise ValueError("Invalid year. Please choose either 2025 or 2050.")
+    
+elif instance == 3 or instance == 4: #Upperbound
+    if year == 2025:
+        CostExpansion_Tec = {
+            "Power_Grid": 1_000_000,
+            "ElectricBoiler": 29.984,
+            "HP_LT": 297.126,
+            "HP_MT": 356.551,
+            "PV": 224.015,
+            "P2G": 262.325,
+            "G2P": 653.700,
+            "GasBoiler": 16.735,
+            "GasBoiler_CCS": 269.840,
+            "CHP": 333.032,
+            "CHP_CCS": 586.136,
+            "Biogas_Grid": 1_000_000,
+            "CH4_Grid": 1_000_000,
+            "CH4_H2_Mixer": 0,
+            "DieselReserveGenerator": 120.494,
+            "H2_Grid": 1_000_000
+        }
+
+        CostExpansion_Bat = {
+            "BESS_Li_Ion_1": 318.645,
+            "BESS_Redox_1": 181.919,
+            "CAES_1": 268.123,
+            "Flywheel_1": 128.300,
+            "Hot_Water_Tank_LT_1": 0.928,
+            "H2_Storage_1": 18.136,
+            "CH4_Storage_1": 0.01382
+        }
+    elif year == 2050:
+        CostExpansion_Tec = {
+            "Power_Grid": 1_000_000,
+            "ElectricBoiler": 27.98510,
+            "HP_LT": 252.10696,
+            "HP_MT": 302.52835,
+            "PV": 127.56392,
+            "P2G": 111.12222,
+            "G2P": 435.80011,
+            "GasBoiler": 15.21389,
+            "GasBoiler_CCS": 261.95877,
+            "CHP": 324.66432,
+            "CHP_CCS": 571.40920,
+            "Biogas_Grid": 1_000_000,
+            "CH4_Grid": 1_000_000,
+            "CH4_H2_Mixer": 0,
+            "DieselReserveGenerator": 120.49397,
+            "H2_Grid": 1_000_000
+        }
+
+        CostExpansion_Bat = {
+            "BESS_Li_Ion_1": 97.66155,
+            "BESS_Redox_1": 126.38554,
+            "CAES_1": 259.99758,
+            "Flywheel_1": 128.30047,
+            "Hot_Water_Tank_LT_1": 0.92789,
+            "H2_Storage_1": 7.47444,
+            "CH4_Storage_1": 0.01382
+        }
+
+
+    else:
+        raise ValueError("Invalid year. Please choose either 2025 or 2050.")
+else:
+    raise ValueError("Invalid instance number.")
+# --------------------------    --------------------------
+# --------------------------    --------------------------      
 
 CostGridTariff = 123.93
 
@@ -314,8 +484,8 @@ Tech_availability = {
     "G2P": 0.98,
     "GasBoiler": 0.98,
     "GasBoiler_CCS": 0.98,
-    "CHP": 0.98,
-    "CHP_CCS": 0.98,
+    "CHP": 0.8,
+    "CHP_CCS": 0.8,
     "Biogas_Grid": 0.9,
     "CH4_Grid": 0.8,
     "CH4_H2_Mixer": 1.0,

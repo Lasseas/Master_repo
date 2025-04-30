@@ -2,11 +2,17 @@ import pandas as pd
 import numpy as np
 import random
 from Get_Historical_and_technological_data_file import Cost_export, ReferenceDemand, NodeProbability, Tech_availability, CapacityUpPrice, CapacityDwnPrice, ActivationUpPrice, ActivationDwnPrice, SpotPrice, IntradayPrice, CostExpansion_Tec, CostExpansion_Bat, CostGridTariff, LastPeriodInMonth, Res_CapacityDwnVolume, Res_CapacityUpVolume, ID_Capacity_Buy_Volume, ID_Capacity_Sell_Volume, parent_mapping, excel_path
+
+
 #####################################################################################
 ################################## KONSTANTE SETT ###################################
 #####################################################################################
 #################### HUSK Å ENDRE DISSE I DE ANDRE FILENE OGSÅ ######################
 #####################################################################################
+#excel_path = "NO1_Aluminum_2024_combined historical data.xlsx"
+excel_path = "NO1_Pulp_Paper_2024_combined historical data.xlsx"
+instance = 1                    # state which instance you would like to run for
+year = 2025                     # state which year you would like to run for
 
 num_branches_to_firstStage = 2 # Antall grener til det vi i LateX har definert som Omega^first
 num_branches_to_secondStage = 4
