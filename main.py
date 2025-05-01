@@ -759,12 +759,11 @@ opt = SolverFactory("gurobi", Verbose=True)
 
 
 # Set absolute path to your working directory (adjust if needed)
-base_dir = "/home/ojviken/Simple_extended"
-# results_folder = "Results"
-results_folder = os.path.join(base_dir, "Results")
+#base_dir = "/home/ojviken/Simple_extended"
+results_folder = "Results"
+#results_folder = os.path.join(base_dir, "Results")
 os.makedirs(results_folder, exist_ok=True)
 
-print("Saving results to:", results_folder)
 
 opt.options['LogFile'] = os.path.join(results_folder, 'gurobi_log.txt')
 
