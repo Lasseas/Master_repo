@@ -15,13 +15,13 @@ instance = 1                    # state which instance you would like to run for
 year = 2025                     # state which year you would like to run for
 
 num_branches_to_firstStage = 2 # Antall grener til det vi i LateX har definert som Omega^first
-num_branches_to_secondStage = 10
-num_branches_to_thirdStage = 10
-num_branches_to_fourthStage = 10
-num_branches_to_fifthStage = 10
-num_branches_to_sixthStage = 10
-num_branches_to_seventhStage = 10
-num_branches_to_eighthStage = 10
+num_branches_to_secondStage = 50
+num_branches_to_thirdStage = 50
+num_branches_to_fourthStage = 0
+num_branches_to_fifthStage = 0
+num_branches_to_sixthStage = 0
+num_branches_to_seventhStage = 0
+num_branches_to_eighthStage = 0
 num_branches_to_ninthStage = 0
 num_branches_to_tenthStage = 0
 
@@ -195,6 +195,22 @@ def generate_set_of_Periods(branch_counts, filename = "Set_of_Periods.tab"):
 def get_number_of_periods_from_tab(filepath="Set_of_Periods.tab"):
     df = pd.read_csv(filepath, sep="\t")
     return len(df)
+def generate_set_of_LoadShiftingPeriod(periods_tab="Set_of_Periods.tab", filename="Set_of_LoadShiftingPeriod.tab"):
+    def data_generator():
+        # Read the periods tab file
+        df_periods = pd.read_csv(periods_tab, sep="\t")
+        
+        # Get the maximum period (last one)
+        last_period = df_periods["Periods"].max()
+        
+        # Create a new DataFrame with only that last period
+        df_last = pd.DataFrame({"LoadShiftingPeriod": [last_period]})
+        
+        yield df_last
+
+    # Use the make_tab_file function to write it
+    make_tab_file(filename, data_generator())
+
 
 # Functions to scale and write .tab files for each parameter
 def generate_Par_CostExpansion_Tec(filename="Par_CostExpansion_Tec.tab"):
@@ -759,6 +775,7 @@ generate_set_of_Parents(num_nodes)
 generate_set_Parent_Coupling([num_branches_to_firstStage, num_branches_to_secondStage, num_branches_to_thirdStage, num_branches_to_fourthStage, num_branches_to_fifthStage, num_branches_to_sixthStage, num_branches_to_seventhStage, num_branches_to_eighthStage, num_branches_to_ninthStage, num_branches_to_tenthStage])
 generate_set_of_NodesInStage([num_branches_to_firstStage, num_branches_to_secondStage, num_branches_to_thirdStage, num_branches_to_fourthStage, num_branches_to_fifthStage, num_branches_to_sixthStage, num_branches_to_seventhStage, num_branches_to_eighthStage, num_branches_to_ninthStage, num_branches_to_tenthStage])
 generate_set_of_Periods([num_branches_to_firstStage, num_branches_to_secondStage, num_branches_to_thirdStage, num_branches_to_fourthStage, num_branches_to_fifthStage, num_branches_to_sixthStage, num_branches_to_seventhStage, num_branches_to_eighthStage, num_branches_to_ninthStage, num_branches_to_tenthStage])
+generate_set_of_LoadShiftingPeriod()
 generate_set_of_NodesFirst(num_branches_to_firstStage)
 
 ##########################################################################
