@@ -442,7 +442,7 @@ def extract_series_for_column(columns, node_to_day, day_data_map, all_keys=None,
     return result
 
 # ✅ Define demand-related inputs
-demand_columns = ["Electricity", "LT", "MT"]
+demand_columns = ["Electricity", "LT", "MT", "HT"]
 all_fuels = ["Electricity", "LT", "MT", "H2", "CH4", "Biogas", "CH4_H2_Mix"]
 
 # ✅ Build ReferenceDemand using the unified extractor
