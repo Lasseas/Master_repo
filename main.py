@@ -21,15 +21,15 @@ instance = 1                    # state which instance you would like to run for
 year = 2025                     # state which year you would like to run for
 
 num_branches_to_firstStage = 2 # Antall grener til det vi i LateX har definert som Omega^first
-num_branches_to_secondStage = 30
-num_branches_to_thirdStage = 30
-num_branches_to_fourthStage = 0
-num_branches_to_fifthStage = 0
-num_branches_to_sixthStage = 0
-num_branches_to_seventhStage = 0
-num_branches_to_eighthStage = 0
-num_branches_to_ninthStage = 0
-num_branches_to_tenthStage = 0
+num_branches_to_secondStage = 2
+num_branches_to_thirdStage = 2
+num_branches_to_fourthStage = 2
+num_branches_to_fifthStage = 2
+num_branches_to_sixthStage = 2
+num_branches_to_seventhStage = 2
+num_branches_to_eighthStage = 2
+num_branches_to_ninthStage = 2
+num_branches_to_tenthStage = 2
 
 ##################################################################################
 ############################### READING EXCEL FILE ###############################
@@ -84,7 +84,7 @@ model.Time = pyo.Set(ordered=True) #Set of time periods (hours)
 model.Period = pyo.Set(ordered=True) #Set of stages/operational periods
 model.LoadShiftingPeriod = pyo.Set(ordered=True) 
 #model.LoadShiftingIntervals = pyo.Set(ordered=True)
-model.Time_NO_LoadShift = pyo.Set(dimen = 2, ordered = True) 
+#model.Time_NO_LoadShift = pyo.Set(dimen = 2, ordered = True) 
 #model.TimeLoadShift = pyo.Set(dimen = 3, ordered = True) #Subset of time periods for load shifting in stage s
 model.Month = pyo.Set(ordered = True) #Set of months
 model.PeriodInMonth = pyo.Set(dimen = 2, ordered = True) #Subset of stages in month m
@@ -108,7 +108,7 @@ print("Reading sets...")
 data.load(filename="Set_of_TimeSteps.tab", format="set", set=model.Time)
 data.load(filename="Set_of_Periods.tab", format="set", set=model.Period)
 data.load(filename="Set_of_LoadShiftingPeriod.tab", format="set", set=model.LoadShiftingPeriod)
-data.load(filename="Set_of_TimeSteps_NO_LoadShift.tab", format = "set", set=model.Time_NO_LoadShift)
+#data.load(filename="Set_of_TimeSteps_NO_LoadShift.tab", format = "set", set=model.Time_NO_LoadShift)
 data.load(filename="Set_of_Month.tab", format = "set", set=model.Month)
 data.load(filename="Set_of_PeriodsInMonth.tab", format = "set", set=model.PeriodInMonth)
 data.load(filename="Set_of_Technology.tab", format = "set", set=model.Technology)

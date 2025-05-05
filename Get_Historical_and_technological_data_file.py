@@ -14,15 +14,15 @@ instance = 1                    # state which instance you would like to run for
 year = 2025                     # state which year you would like to run for
 
 num_branches_to_firstStage = 2 # Antall grener til det vi i LateX har definert som Omega^first
-num_branches_to_secondStage = 30
-num_branches_to_thirdStage = 30
-num_branches_to_fourthStage = 0
-num_branches_to_fifthStage = 0
-num_branches_to_sixthStage = 0
-num_branches_to_seventhStage = 0
-num_branches_to_eighthStage = 0
-num_branches_to_ninthStage = 0
-num_branches_to_tenthStage = 0
+num_branches_to_secondStage = 2
+num_branches_to_thirdStage = 2
+num_branches_to_fourthStage = 2
+num_branches_to_fifthStage = 2
+num_branches_to_sixthStage = 2
+num_branches_to_seventhStage = 2
+num_branches_to_eighthStage = 2
+num_branches_to_ninthStage = 2
+num_branches_to_tenthStage = 2
 
 num_timesteps = 24
 num_nodes = num_branches_to_firstStage + num_branches_to_firstStage*num_branches_to_secondStage + num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage + num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage + num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage + num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage + num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage + num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage + num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage*num_branches_to_ninthStage + num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage*num_branches_to_ninthStage*num_branches_to_tenthStage
@@ -91,7 +91,8 @@ if instance == 1: #Expected value
             "CH4_Grid": 1_000_000,
             "CH4_H2_Mixer": 0,
             "DieselReserveGenerator": 100.412,
-            "H2_Grid": 1_000_000
+            "H2_Grid": 1_000_000,
+            "Direct_Firing": 5.09831 
         }
         
 
@@ -121,7 +122,8 @@ if instance == 1: #Expected value
             "CH4_Grid": 1_000_000,
             "CH4_H2_Mixer": 0,
             "DieselReserveGenerator": 100.41164,
-            "H2_Grid": 1_000_000
+            "H2_Grid": 1_000_000,
+            "Direct_Firing": 5.09831 
         }
         
         CostExpansion_Bat = {
@@ -155,7 +157,8 @@ elif instance == 2 or instance == 5: #Lowerbound
             "CH4_Grid": 1_000_000,
             "CH4_H2_Mixer": 0,
             "DieselReserveGenerator": 80.329,
-            "H2_Grid": 1_000_000
+            "H2_Grid": 1_000_000,
+            "Direct_Firing": 4.079 
         }
         
         CostExpansion_Bat = {
@@ -184,7 +187,8 @@ elif instance == 2 or instance == 5: #Lowerbound
             "CH4_Grid": 1_000_000,
             "CH4_H2_Mixer": 0,
             "DieselReserveGenerator": 80.32932,
-            "H2_Grid": 1_000_000
+            "H2_Grid": 1_000_000,
+            "Direct_Firing": 4.079
         }
 
         CostExpansion_Bat = {
@@ -218,7 +222,8 @@ elif instance == 3 or instance == 4: #Upperbound
             "CH4_Grid": 1_000_000,
             "CH4_H2_Mixer": 0,
             "DieselReserveGenerator": 120.494,
-            "H2_Grid": 1_000_000
+            "H2_Grid": 1_000_000,
+            "Direct_Firing": 6.118
         }
 
         CostExpansion_Bat = {
@@ -247,7 +252,8 @@ elif instance == 3 or instance == 4: #Upperbound
             "CH4_Grid": 1_000_000,
             "CH4_H2_Mixer": 0,
             "DieselReserveGenerator": 120.49397,
-            "H2_Grid": 1_000_000
+            "H2_Grid": 1_000_000,
+            "Direct_Firing": 6.118
         }
 
         CostExpansion_Bat = {
@@ -270,8 +276,6 @@ else:
 
 CostGridTariff = 123.93
 
-
-LastPeriodInMonth = {}
 
 
 
@@ -443,7 +447,7 @@ def extract_series_for_column(columns, node_to_day, day_data_map, all_keys=None,
 
 # ✅ Define demand-related inputs
 demand_columns = ["Electricity", "LT", "MT", "HT"]
-all_fuels = ["Electricity", "LT", "MT", "H2", "CH4", "Biogas", "CH4_H2_Mix"]
+all_fuels = ["Electricity", "LT", "MT", "HT", "H2", "CH4", "Biogas", "CH4_H2_Mix"]
 
 # ✅ Build ReferenceDemand using the unified extractor
 ReferenceDemand = extract_series_for_column(
@@ -490,7 +494,8 @@ Tech_availability = {
     "CH4_Grid": 0.8,
     "CH4_H2_Mixer": 1.0,
     "DieselReserve_Generator": 0.98,
-    "H2_Grid": 0.8
+    "H2_Grid": 0.8,
+    "Direct_Firing": 0.98
 }
 
 Cost_export = {
@@ -525,3 +530,4 @@ pprint.pprint({k: list(v.items())[:1] for k, v in ID_Capacity_Buy_Volume.items()
 
 
 parent_mapping = create_parent_mapping("Set_ParentCoupling.tab")
+

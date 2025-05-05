@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import random
-from Get_Historical_and_technological_data_file import Cost_export, ReferenceDemand, NodeProbability, Tech_availability, CapacityUpPrice, CapacityDwnPrice, ActivationUpPrice, ActivationDwnPrice, SpotPrice, IntradayPrice, CostExpansion_Tec, CostExpansion_Bat, CostGridTariff, LastPeriodInMonth, Res_CapacityDwnVolume, Res_CapacityUpVolume, ID_Capacity_Buy_Volume, ID_Capacity_Sell_Volume, parent_mapping, excel_path
+from Get_Historical_and_technological_data_file import Cost_export, ReferenceDemand, NodeProbability, Tech_availability, CapacityUpPrice, CapacityDwnPrice, ActivationUpPrice, ActivationDwnPrice, SpotPrice, IntradayPrice, CostExpansion_Tec, CostExpansion_Bat, CostGridTariff, Res_CapacityDwnVolume, Res_CapacityUpVolume, ID_Capacity_Buy_Volume, ID_Capacity_Sell_Volume, parent_mapping, excel_path
 
 
 #####################################################################################
@@ -15,15 +15,15 @@ instance = 1                    # state which instance you would like to run for
 year = 2025                     # state which year you would like to run for
 
 num_branches_to_firstStage = 2 # Antall grener til det vi i LateX har definert som Omega^first
-num_branches_to_secondStage = 30
-num_branches_to_thirdStage = 30
-num_branches_to_fourthStage = 0
-num_branches_to_fifthStage = 0
-num_branches_to_sixthStage = 0
-num_branches_to_seventhStage = 0
-num_branches_to_eighthStage = 0
-num_branches_to_ninthStage = 0
-num_branches_to_tenthStage = 0
+num_branches_to_secondStage = 2
+num_branches_to_thirdStage = 2
+num_branches_to_fourthStage = 2
+num_branches_to_fifthStage = 2
+num_branches_to_sixthStage = 2
+num_branches_to_seventhStage = 2
+num_branches_to_eighthStage = 2
+num_branches_to_ninthStage = 2
+num_branches_to_tenthStage = 2
 
 
 num_timesteps = 24
@@ -32,8 +32,8 @@ num_firstStageNodes = num_branches_to_firstStage
 num_nodesInlastStage = max(num_branches_to_firstStage, num_branches_to_firstStage*num_branches_to_secondStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage*num_branches_to_ninthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage*num_branches_to_ninthStage*num_branches_to_tenthStage)
 
 
-technologies = ["Power_Grid", "ElectricBoiler", "HP_LT", "HP_MT", "PV", "P2G", "G2P", "GasBoiler", "GasBoiler_CCS", "CHP", "CHP_CCS", "Biogas_Grid", "CH4_Grid", "CH4_H2_Mixer", "DieselReserveGenerator", "H2_Grid"]
-energy_carriers = ["Electricity", "LT", "MT", "H2", "CH4", "Biogas", "CH4_H2_Mix"]
+technologies = ["Power_Grid", "ElectricBoiler", "HP_LT", "HP_MT", "PV", "P2G", "G2P", "GasBoiler", "GasBoiler_CCS", "CHP", "CHP_CCS", "Biogas_Grid", "CH4_Grid", "CH4_H2_Mixer", "DieselReserveGenerator", "H2_Grid", "Direct_Firing"]
+energy_carriers = ["Electricity", "LT", "MT", "HT", "H2", "CH4", "Biogas", "CH4_H2_Mix"]
 StorageTech = ["BESS_Li_Ion_1", "BESS_Redox_1", "CEAS_1", "Flywheel_1", "Hot_Wate_Tank_LT_1", "H2_Storage_1", "CH4_Storage_1"]
 
 Cost_energy = {
@@ -211,6 +211,20 @@ def generate_set_of_LoadShiftingPeriod(periods_tab="Set_of_Periods.tab", filenam
     # Use the make_tab_file function to write it
     make_tab_file(filename, data_generator())
 
+def generate_set_of_PeriodsInMonth(branch_counts, filename="Set_of_PeriodsInMonth.tab"):
+    def data_generator():
+        # Extract valid period indices (starting from stage 2 = index 1)
+        valid_periods = [i for i, count in enumerate(branch_counts[1:], start=1) if count > 0]
+
+        # Create the DataFrame assigning all periods to Month 1
+        df = pd.DataFrame({
+            "Month": [1] * len(valid_periods),
+            "PeriodInMonth": list(range(1, len(valid_periods) + 1))
+        })
+
+        yield df
+
+    make_tab_file(filename, data_generator())
 
 # Functions to scale and write .tab files for each parameter
 def generate_Par_CostExpansion_Tec(filename="Par_CostExpansion_Tec.tab"):
@@ -775,6 +789,7 @@ generate_set_of_Parents(num_nodes)
 generate_set_Parent_Coupling([num_branches_to_firstStage, num_branches_to_secondStage, num_branches_to_thirdStage, num_branches_to_fourthStage, num_branches_to_fifthStage, num_branches_to_sixthStage, num_branches_to_seventhStage, num_branches_to_eighthStage, num_branches_to_ninthStage, num_branches_to_tenthStage])
 generate_set_of_NodesInStage([num_branches_to_firstStage, num_branches_to_secondStage, num_branches_to_thirdStage, num_branches_to_fourthStage, num_branches_to_fifthStage, num_branches_to_sixthStage, num_branches_to_seventhStage, num_branches_to_eighthStage, num_branches_to_ninthStage, num_branches_to_tenthStage])
 generate_set_of_Periods([num_branches_to_firstStage, num_branches_to_secondStage, num_branches_to_thirdStage, num_branches_to_fourthStage, num_branches_to_fifthStage, num_branches_to_sixthStage, num_branches_to_seventhStage, num_branches_to_eighthStage, num_branches_to_ninthStage, num_branches_to_tenthStage])
+generate_set_of_PeriodsInMonth([num_branches_to_firstStage, num_branches_to_secondStage, num_branches_to_thirdStage, num_branches_to_fourthStage, num_branches_to_fifthStage, num_branches_to_sixthStage, num_branches_to_seventhStage, num_branches_to_eighthStage, num_branches_to_ninthStage, num_branches_to_tenthStage])
 generate_set_of_LoadShiftingPeriod()
 generate_set_of_NodesFirst(num_branches_to_firstStage)
 
