@@ -28,8 +28,8 @@ num_branches_to_fifthStage = 2
 num_branches_to_sixthStage = 2
 num_branches_to_seventhStage = 2
 num_branches_to_eighthStage = 2
-num_branches_to_ninthStage = 2
-num_branches_to_tenthStage = 2
+num_branches_to_ninthStage = 0
+num_branches_to_tenthStage = 0
 
 ##################################################################################
 ############################### READING EXCEL FILE ###############################
