@@ -546,3 +546,80 @@ Solved with barrier
 
 Solved in 12975 iterations and 12.53 seconds (6.98 work units)
 Optimal objective  2.870424605e+05
+
+Gurobi 11.0.0 (win64) logging started Wed May  7 14:57:17 2025
+
+Set parameter LogFile to value "Results\gurobi_log.txt"
+Gurobi Optimizer version 11.0.0 build v11.0.0rc2 (win64 - Windows 10.0 (19045.2))
+
+CPU model: Intel(R) Core(TM) i7-10700 CPU @ 2.90GHz, instruction set [SSE2|AVX|AVX2]
+Thread count: 8 physical cores, 16 logical processors, using up to 16 threads
+
+Optimize a model with 8785135 rows, 7285390 columns and 28424596 nonzeros
+Model fingerprint: 0xfcffccef
+Coefficient statistics:
+  Matrix range     [1e-03, 7e+06]
+  Objective range  [1e-03, 1e+00]
+  Bounds range     [0e+00, 0e+00]
+  RHS range        [5e-02, 1e+08]
+Presolve removed 1222334 rows and 427492 columns (presolve time = 5s) ...
+Presolve removed 1613448 rows and 1226889 columns (presolve time = 10s) ...
+Presolve removed 3946559 rows and 3560000 columns (presolve time = 15s) ...
+Presolve removed 5322147 rows and 4935588 columns (presolve time = 21s) ...
+Presolve removed 5322147 rows and 4935588 columns (presolve time = 25s) ...
+Presolve removed 5328195 rows and 4935588 columns (presolve time = 30s) ...
+Presolve removed 5336760 rows and 4935588 columns
+Presolve time: 34.71s
+Presolved: 3448375 rows, 2349802 columns, 15886372 nonzeros
+
+Elapsed ordering time = 5s
+Elapsed ordering time = 21s
+Elapsed ordering time = 35s
+Elapsed ordering time = 35s
+Elapsed ordering time = 40s
+Elapsed ordering time = 45s
+Ordering time: 91.07s
+Elapsed ordering time = 92s
+Elapsed ordering time = 95s
+Elapsed ordering time = 106s
+Elapsed ordering time = 113s
+Elapsed ordering time = 116s
+Elapsed ordering time = 121s
+Elapsed ordering time = 125s
+Elapsed ordering time = 131s
+Elapsed ordering time = 135s
+Elapsed ordering time = 140s
+Elapsed ordering time = 145s
+Elapsed ordering time = 150s
+Elapsed ordering time = 155s
+Elapsed ordering time = 160s
+Ordering time: 169.95s
+
+Barrier statistics:
+ Dense cols : 22
+ AA' NZ     : 2.908e+07
+ Factor NZ  : 5.808e+08 (roughly 7.0 GB of memory)
+ Factor Ops : 7.886e+11 (roughly 4 seconds per iteration)
+ Threads    : 8
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0  -4.26780243e+09 -5.08298092e+13  2.09e+09 1.65e+03  2.72e+10   260s
+   1  -2.66966498e+10 -8.31189217e+13  2.07e+09 4.22e+04  2.68e+10   295s
+   2   5.86394166e+09 -8.84462176e+13  1.27e+09 1.56e+05  1.54e+10   328s
+   3   6.68078856e+09 -9.21413411e+13  6.72e+08 1.26e+04  7.80e+09   349s
+   4   4.59833875e+09 -8.55968036e+13  3.53e+08 8.88e+03  3.46e+09   367s
+   5   3.15481056e+09 -8.15298367e+13  9.13e+07 2.21e+04  9.46e+08   385s
+   6   2.64516787e+09 -5.73857616e+13  4.52e+06 2.51e+02  5.55e+07   403s
+   7   6.67445883e+09 -2.66875718e+13  4.83e+05 4.28e+00  9.01e+06   420s
+   8   6.15220571e+09 -1.38289081e+13  2.62e+05 1.79e+00  4.14e+06   436s
+   9   5.25882052e+09 -8.29702213e+12  1.27e+05 9.12e-01  2.15e+06   451s
+  10   4.17408758e+09 -4.04225506e+12  6.79e+04 3.99e-01  1.02e+06   471s
+  11   2.94757470e+09 -3.30437132e+12  4.49e+04 3.21e-01  7.84e+05   496s
+
+Barrier performed 11 iterations in 512.22 seconds (141.28 work units)
+Optimization interrupted
+
+
+Stopped in 0 iterations and 513.04 seconds (162.53 work units)
+Solve interrupted

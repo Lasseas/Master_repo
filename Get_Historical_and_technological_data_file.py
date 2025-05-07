@@ -18,9 +18,9 @@ num_branches_to_secondStage = 2
 num_branches_to_thirdStage = 2
 num_branches_to_fourthStage = 2
 num_branches_to_fifthStage = 2
-num_branches_to_sixthStage = 2
-num_branches_to_seventhStage = 2
-num_branches_to_eighthStage = 2
+num_branches_to_sixthStage = 3
+num_branches_to_seventhStage = 3
+num_branches_to_eighthStage = 3
 num_branches_to_ninthStage = 0
 num_branches_to_tenthStage = 0
 

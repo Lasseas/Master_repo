@@ -25,9 +25,9 @@ num_branches_to_secondStage = 2
 num_branches_to_thirdStage = 2
 num_branches_to_fourthStage = 2
 num_branches_to_fifthStage = 2
-num_branches_to_sixthStage = 2
-num_branches_to_seventhStage = 2
-num_branches_to_eighthStage = 2
+num_branches_to_sixthStage = 3
+num_branches_to_seventhStage = 3
+num_branches_to_eighthStage = 3
 num_branches_to_ninthStage = 0
 num_branches_to_tenthStage = 0
 
@@ -756,6 +756,7 @@ print("Solving...")
 # === Create Results folder ===
 
 opt = SolverFactory("gurobi", Verbose=True)
+opt.options["Method"] = 2  # Use the barrier method
 
 
 # Set absolute path to your working directory (adjust if needed)
