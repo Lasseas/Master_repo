@@ -757,6 +757,7 @@ print("Solving...")
 
 opt = SolverFactory("gurobi", Verbose=True)
 opt.options["Method"] = 2  # Use the barrier method
+opt.options["Crossover"] = 0  # Set crossover value
 
 
 # Set absolute path to your working directory (adjust if needed)
