@@ -853,14 +853,11 @@ EXTRACT VALUE OF VARIABLES AND WRITE THEM INTO EXCEL FILE
 """
 print("Writing results to .xlsx...")
 
-def save_results_to_excel(model_instance, filename="Variable_Results.xlsx"):
-    
-    # Saves Pyomo variable results into an Excel file with filtered output.
-    # Only includes rows with non-zero or non-null values for variables.
-    
+def save_results_to_excel(model_instance, filename="Variable_Results.xlsx", max_rows_per_sheet=1_000_000):
     import pandas as pd
     from pyomo.environ import value
-    # Ensure xlsxwriter is installed
+
+    # Ensure xlsxwriter is available
     try:
         import xlsxwriter
     except ImportError:
@@ -871,44 +868,36 @@ def save_results_to_excel(model_instance, filename="Variable_Results.xlsx"):
         import site
         site.ENABLE_USER_SITE = True
         site.addsitedir(site.getusersitepackages())
-
         import xlsxwriter
 
-
-
-    # Create an Excel writer object
     with pd.ExcelWriter(filename, engine="xlsxwriter") as writer:
-        # Loop over all active variables in the model
         for var in model_instance.component_objects(pyo.Var, active=True):
-            var_name = var.name  # Get the variable name
+            var_name = var.name
             var_data = []
-            
-            # Collect variable data
+
             for index in var:
                 try:
-                    var_value = value(var[index])  # Safely get the variable value
+                    var_value = value(var[index])
                 except ValueError:
-                    var_value = 0  # If uninitialized, set to None
-                if var_value:  # Include only non-zero and non-null values
+                    var_value = 0
+                if var_value:
                     var_data.append((index, var_value))
-            
-            # Transform data into a DataFrame
-            if var_data:  # Only proceed if there is data
+
+            if var_data:
                 df = pd.DataFrame(var_data, columns=["Index", var_name])
-                
-                # Dynamically unpack the indices into separate columns
-                max_index_length = max(len(idx) if isinstance(idx, tuple) else 1 for idx, _ in var_data)
-                unpacked_indices = pd.DataFrame(
-                    [list(index) + [None] * (max_index_length - len(index)) if isinstance(index, tuple) else [index] for index, _ in var_data]
+                max_index_len = max(len(idx) if isinstance(idx, tuple) else 1 for idx, _ in var_data)
+                unpacked = pd.DataFrame(
+                    [list(idx) + [None] * (max_index_len - len(idx)) if isinstance(idx, tuple) else [idx] for idx, _ in var_data],
+                    columns=[f"Index_{i+1}" for i in range(max_index_len)]
                 )
-                
-                # Add unpacked indices to the DataFrame
-                unpacked_indices.columns = [f"Index_{i+1}" for i in range(max_index_length)]
-                df = pd.concat([unpacked_indices, df[var_name]], axis=1)
-                
-                # Write the filtered DataFrame to an Excel sheet
-                df.to_excel(writer, sheet_name=var_name[:31], index=False)
-    
+                df = pd.concat([unpacked, df[var_name]], axis=1)
+
+                # Split into multiple sheets if over Excel limit
+                for i in range(0, len(df), max_rows_per_sheet):
+                    df_chunk = df.iloc[i:i + max_rows_per_sheet]
+                    sheet_title = f"{var_name[:25]}_{i // max_rows_per_sheet + 1}"
+                    df_chunk.to_excel(writer, sheet_name=sheet_title, index=False)
+
     print(f"Variable results saved to {filename}")
 
 # Usage after solving the model
