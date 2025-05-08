@@ -880,7 +880,7 @@ def save_results_to_excel(model_instance, filename="Variable_Results.xlsx", max_
                     var_value = value(var[index])
                 except ValueError:
                     var_value = 0
-                 if abs(var_value) > 1e-6:  # Filter out near-zero values
+                if abs(var_value) > 1e-6:  # Filter out near-zero values
                     var_data.append((index, var_value))
 
             if var_data:
