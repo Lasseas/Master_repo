@@ -24,10 +24,10 @@ num_branches_to_firstStage = 2 # Antall grener til det vi i LateX har definert s
 num_branches_to_secondStage = 2
 num_branches_to_thirdStage = 2
 num_branches_to_fourthStage = 2
-num_branches_to_fifthStage = 2
-num_branches_to_sixthStage = 3
-num_branches_to_seventhStage = 3
-num_branches_to_eighthStage = 3
+num_branches_to_fifthStage = 0
+num_branches_to_sixthStage = 0
+num_branches_to_seventhStage = 0
+num_branches_to_eighthStage = 0
 num_branches_to_ninthStage = 0
 num_branches_to_tenthStage = 0
 
@@ -453,7 +453,7 @@ model.ConversionBalanceIn = pyo.Constraint(model.Nodes_in_stage, model.Time, mod
 #####################################################################################
 ########################### TECHNOLOGY RAMPING CONSTRAINTS ##########################
 #####################################################################################
-
+"""
 def Ramping_Technology(model, n, p, t, s, i, e, o):
     if (n,s) in model.Nodes_in_stage:
         if t == model.Time.first() and s == model.Period.first(): #Første tidssteg i første stage  
@@ -467,6 +467,8 @@ def Ramping_Technology(model, n, p, t, s, i, e, o):
     else:
         return pyo.Constraint.Skip
 model.RampingTechnology = pyo.Constraint(model.Parent_Node, model.Time, model.Period, model.TechnologyToEnergyCarrier, rule = Ramping_Technology)
+
+"""
 
 #####################################################################################
 ############## HEAT PUMP LIMITATION - MÅ ENDRES I HENHOLD TIL INPUTDATA #############
@@ -730,12 +732,14 @@ def Carbon_Emission_Limit(model, n): #Kan løses med aggregert variabel og paren
     return total_emission <= model.Max_Carbon_Emission
 model.CarbonEmissionLimit = pyo.Constraint(model.Nodes_in_stage, rule=Carbon_Emission_Limit)
 """
-
+"""
 def Carbon_Emission_Limit(model, n, s): 
     return sum(sum(sum(
         model.y_activity[n, t, i, o] * model.Carbon_Intensity[i, o]
         for o in model.Mode_of_operation if (i,o) in model.Carbon_Intensity) for i in model.Technology) for t in model.Time) <= model.Max_Carbon_Emission
 model.CarbonEmissionLimit = pyo.Constraint(model.Nodes_in_stage, rule=Carbon_Emission_Limit)
+
+"""
 
 print("Objective and constraints read...")
 
@@ -756,8 +760,9 @@ print("Solving...")
 # === Create Results folder ===
 
 opt = SolverFactory("gurobi", Verbose=True)
-opt.options["Method"] = 2  # Use the barrier method
 opt.options["Crossover"] = 0  # Set crossover value
+opt.options["Method"] = 2  # Use the barrier method
+
 
 
 # Set absolute path to your working directory (adjust if needed)
@@ -766,8 +771,6 @@ results_folder = "Results"
 #results_folder = os.path.join(base_dir, "Results")
 os.makedirs(results_folder, exist_ok=True)
 
-
-opt.options['LogFile'] = os.path.join(results_folder, 'gurobi_log.txt')
 
 
 #start the timer
@@ -779,6 +782,28 @@ results = opt.solve(our_model, tee=True)
 end_time = time.time()
 running_time = end_time - start_time
 
+# Step 1: Set a temp log file
+logfile_temp = os.path.join(results_folder, 'gurobi_log_temp.txt')
+opt.options['LogFile'] = logfile_temp
+
+# Step 2: Start timing
+start_time = time.time()
+
+results = opt.solve(our_model, tee=True)
+
+# Step 3: End timing and compute runtime
+end_time = time.time()
+running_time = end_time - start_time
+runtime_str = f"{running_time:.2f}s".replace('.', '_')  # e.g., "123_45s"
+
+# Step 4: Rename the Gurobi log file to include the runtime
+final_logfile = os.path.join(results_folder, f"gurobi_log_{runtime_str}.txt")
+os.rename(logfile_temp, final_logfile)
+
+# Optional: Append Python timing info at the bottom
+with open(final_logfile, 'a') as f:
+    f.write("\n==================== PYTHON TIMING INFO ====================\n")
+    f.write(f"Total solving time measured in Python: {running_time:.2f} seconds\n")
 
 
 # Extract Gurobi solver information
