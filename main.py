@@ -671,14 +671,14 @@ model.SupplyLimitation = pyo.Constraint(model.Nodes_in_stage, model.Time, model.
 ##############################################################
 ############## EXPORT LIMITATION AND GRID TARIFF #############
 ##############################################################
-
+"""
 def export_limitation(model, n, s, t, i, e, o):
     if (i, e, o) == ('Power_Grid', 'Electricity', 2):
         return model.y_in[n, t, i, e, o] <= model.Max_Export
     else:
         return pyo.Constraint.Skip
 model.ExportLimitation = pyo.Constraint(model.Nodes_in_stage, model.Time, model.EnergyCarrierToTechnology, rule=export_limitation)
-
+"""
 def peak_load(model, n, s, t, m, i, e, o):
     if i == 'Power_Grid' and e == 'Electricity' and (m,s) in model.PeriodInMonth:
         return (model.y_out[n, t, i, e, o] <= model.y_max[n, m])

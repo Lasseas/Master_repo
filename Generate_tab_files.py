@@ -18,10 +18,10 @@ num_branches_to_firstStage = 2 # Antall grener til det vi i LateX har definert s
 num_branches_to_secondStage = 2
 num_branches_to_thirdStage = 2
 num_branches_to_fourthStage = 2
-num_branches_to_fifthStage = 2
-num_branches_to_sixthStage = 3
-num_branches_to_seventhStage = 3
-num_branches_to_eighthStage = 3
+num_branches_to_fifthStage = 0
+num_branches_to_sixthStage = 0
+num_branches_to_seventhStage = 0
+num_branches_to_eighthStage = 0
 num_branches_to_ninthStage = 0
 num_branches_to_tenthStage = 0
 
@@ -33,7 +33,7 @@ num_nodesInlastStage = max(num_branches_to_firstStage, num_branches_to_firstStag
 
 
 technologies = ["Power_Grid", "ElectricBoiler", "HP_LT", "HP_MT", "PV", "P2G", "G2P", "GasBoiler", "GasBoiler_CCS", "CHP", "CHP_CCS", "Biogas_Grid", "CH4_Grid", "CH4_H2_Mixer", "DieselReserveGenerator", "H2_Grid", "Direct_Firing"]
-energy_carriers = ["Electricity", "LT", "MT", "HT", "H2", "CH4", "Biogas", "CH4_H2_Mix"]
+energy_carriers = ["Electricity", "LT", "MT", "H2", "CH4", "Biogas", "CH4_H2_Mix"]
 StorageTech = ["BESS_Li_Ion_1", "BESS_Redox_1", "CEAS_1", "Flywheel_1", "Hot_Wate_Tank_LT_1", "H2_Storage_1", "CH4_Storage_1"]
 
 Cost_energy = {

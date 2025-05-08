@@ -17,10 +17,10 @@ num_branches_to_firstStage = 2 # Antall grener til det vi i LateX har definert s
 num_branches_to_secondStage = 2
 num_branches_to_thirdStage = 2
 num_branches_to_fourthStage = 2
-num_branches_to_fifthStage = 2
-num_branches_to_sixthStage = 3
-num_branches_to_seventhStage = 3
-num_branches_to_eighthStage = 3
+num_branches_to_fifthStage = 0
+num_branches_to_sixthStage = 0
+num_branches_to_seventhStage = 0
+num_branches_to_eighthStage = 0
 num_branches_to_ninthStage = 0
 num_branches_to_tenthStage = 0
 
@@ -91,8 +91,7 @@ if instance == 1: #Expected value
             "CH4_Grid": 1_000_000,
             "CH4_H2_Mixer": 0,
             "DieselReserveGenerator": 100.412,
-            "H2_Grid": 1_000_000,
-            "Direct_Firing": 5.09831 
+            "H2_Grid": 1_000_000 
         }
         
 
@@ -122,8 +121,7 @@ if instance == 1: #Expected value
             "CH4_Grid": 1_000_000,
             "CH4_H2_Mixer": 0,
             "DieselReserveGenerator": 100.41164,
-            "H2_Grid": 1_000_000,
-            "Direct_Firing": 5.09831 
+            "H2_Grid": 1_000_000
         }
         
         CostExpansion_Bat = {
@@ -157,8 +155,7 @@ elif instance == 2 or instance == 5: #Lowerbound
             "CH4_Grid": 1_000_000,
             "CH4_H2_Mixer": 0,
             "DieselReserveGenerator": 80.329,
-            "H2_Grid": 1_000_000,
-            "Direct_Firing": 4.079 
+            "H2_Grid": 1_000_000 
         }
         
         CostExpansion_Bat = {
@@ -187,8 +184,7 @@ elif instance == 2 or instance == 5: #Lowerbound
             "CH4_Grid": 1_000_000,
             "CH4_H2_Mixer": 0,
             "DieselReserveGenerator": 80.32932,
-            "H2_Grid": 1_000_000,
-            "Direct_Firing": 4.079
+            "H2_Grid": 1_000_000
         }
 
         CostExpansion_Bat = {
@@ -222,8 +218,7 @@ elif instance == 3 or instance == 4: #Upperbound
             "CH4_Grid": 1_000_000,
             "CH4_H2_Mixer": 0,
             "DieselReserveGenerator": 120.494,
-            "H2_Grid": 1_000_000,
-            "Direct_Firing": 6.118
+            "H2_Grid": 1_000_000
         }
 
         CostExpansion_Bat = {
@@ -252,8 +247,7 @@ elif instance == 3 or instance == 4: #Upperbound
             "CH4_Grid": 1_000_000,
             "CH4_H2_Mixer": 0,
             "DieselReserveGenerator": 120.49397,
-            "H2_Grid": 1_000_000,
-            "Direct_Firing": 6.118
+            "H2_Grid": 1_000_000
         }
 
         CostExpansion_Bat = {
@@ -446,8 +440,8 @@ def extract_series_for_column(columns, node_to_day, day_data_map, all_keys=None,
     return result
 
 # ✅ Define demand-related inputs
-demand_columns = ["Electricity", "LT", "MT", "HT"]
-all_fuels = ["Electricity", "LT", "MT", "HT", "H2", "CH4", "Biogas", "CH4_H2_Mix"]
+demand_columns = ["Electricity", "LT", "MT", "CH4"]
+all_fuels = ["Electricity", "LT", "MT", "H2", "CH4", "Biogas", "CH4_H2_Mix"]
 
 # ✅ Build ReferenceDemand using the unified extractor
 ReferenceDemand = extract_series_for_column(
@@ -494,8 +488,7 @@ Tech_availability = {
     "CH4_Grid": 0.8,
     "CH4_H2_Mixer": 1.0,
     "DieselReserve_Generator": 0.98,
-    "H2_Grid": 0.8,
-    "Direct_Firing": 0.98
+    "H2_Grid": 0.8
 }
 
 Cost_export = {
