@@ -8,7 +8,7 @@ Number of branches per stage:
 - Stage 1: 2
 - Stage 2: 2
 - Stage 3: 2
-- Stage 4: 2
+- Stage 4: 0
 - Stage 5: 0
 - Stage 6: 0
 - Stage 7: 0
@@ -17,5 +17,5 @@ Number of branches per stage:
 - Stage 10: 0
 
 
-Number of Nodes: 30
-Objective Value: 287042.46
+Number of Nodes: 14
+Objective Value: 223978.40
