@@ -6,8 +6,8 @@ year: 2025
 
 Number of branches per stage:
 - Stage 1: 2
-- Stage 2: 2
-- Stage 3: 2
+- Stage 2: 6
+- Stage 3: 6
 - Stage 4: 0
 - Stage 5: 0
 - Stage 6: 0
@@ -17,5 +17,5 @@ Number of branches per stage:
 - Stage 10: 0
 
 
-Number of Nodes: 14
-Objective Value: 223978.40
+Number of Nodes: 86
+Objective Value: 191384.26

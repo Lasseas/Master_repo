@@ -1,5 +1,5 @@
 Solver Runtime Log
 --------------------
-Total Solving Time (end time - start time): 3.06 seconds
+Total Solving Time (end time - start time): 19.14 seconds
 
 Simplex Iterations: Unavailable
