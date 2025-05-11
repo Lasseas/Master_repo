@@ -768,6 +768,12 @@ results = opt.solve(our_model, tee=True)
 end_time = time.time()
 running_time = end_time - start_time
 
+
+# Clean up old Gurobi log files
+for f in os.listdir(results_folder):
+    if f.startswith("gurobi_log_") and f.endswith(".txt"):
+        os.remove(os.path.join(results_folder, f))
+
 # Step 1: Set a temp log file
 logfile_temp = os.path.join(results_folder, 'gurobi_log_temp.txt')
 opt.options['LogFile'] = logfile_temp
