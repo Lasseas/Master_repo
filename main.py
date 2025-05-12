@@ -29,10 +29,10 @@ year = args.year
 
 # Define branch structures for each instance
 instance_config = {
-    1: (2, 10, 10, 10, 0, 0, 0, 0, 0, 0),
-    2: (2, 12, 12, 12, 0, 0, 0, 0, 0, 0),
-    3: (2, 14, 14, 14, 0, 0, 0, 0, 0, 0),
-    4: (2, 16, 16, 16, 0, 0, 0, 0, 0, 0),
+    1: (2, 5, 5, 5, 0, 0, 0, 0, 0, 0),
+    2: (2, 14, 14, 14, 0, 0, 0, 0, 0, 0),
+    3: (2, 16, 16, 16, 0, 0, 0, 0, 0, 0),
+    4: (2, 18, 18, 18, 0, 0, 0, 0, 0, 0),
     5: (2, 60, 60, 0, 0, 0, 0, 0, 0, 0),
     6: (2, 65, 65, 0, 0, 0, 0, 0, 0, 0),
 }
@@ -809,10 +809,19 @@ our_model.dual = pyo.Suffix(direction=pyo.Suffix.IMPORT) #Import dual values int
 """
 SOLVING PROBLEM
 """
+
+import pyomo.common.tempfiles as tempfiles
+import os
+
+# Create a local temp folder for Pyomo to avoid shared /tmp conflicts
+custom_tmp_dir = os.path.join(os.getcwd(), "pyomo_temp")
+os.makedirs(custom_tmp_dir, exist_ok=True)
+tempfiles.TempfileManager.tempdir = custom_tmp_dir
+
+
 print("Solving...")
 
 # === Create Results folder ===
-
 
 
 opt = SolverFactory("gurobi", Verbose=True)
