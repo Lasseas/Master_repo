@@ -29,12 +29,12 @@ year = args.year
 
 # Define branch structures for each instance
 instance_config = {
-    1: (2, 6, 6, 0, 0, 0, 0, 0, 0, 0),
-    2: (3, 5, 4, 0, 0, 0, 0, 0, 0, 0),
-    3: (2, 6, 6, 2, 0, 0, 0, 0, 0, 0),
-    4: (2, 6, 6, 2, 2, 0, 0, 0, 0, 0),
-    5: (2, 6, 6, 6, 2, 2, 0, 0, 0, 0),
-    6: (2, 6, 6, 6, 6, 6, 2, 0, 0, 0),
+    1: (2, 10, 10, 10, 0, 0, 0, 0, 0, 0),
+    2: (2, 12, 12, 12, 0, 0, 0, 0, 0, 0),
+    3: (2, 14, 14, 14, 0, 0, 0, 0, 0, 0),
+    4: (2, 16, 16, 16, 0, 0, 0, 0, 0, 0),
+    5: (2, 60, 60, 0, 0, 0, 0, 0, 0, 0),
+    6: (2, 65, 65, 0, 0, 0, 0, 0, 0, 0),
 }
 
 if instance not in instance_config:
@@ -260,7 +260,7 @@ elif instance == 4 and year == 2050:
 elif instance == 5 and year == 2025:
     data.load(filename="Par_CostEmission_5_2025.tab", param=model.Cost_Emission, format = "table")
 elif instance == 5 and year == 2050:
-    data.load(filename="Par_Cost_Emission_5_2050.tab", param=model.Cost_Emission, format = "table")
+    data.load(filename="Par_CostEmission_5_2050.tab", param=model.Cost_Emission, format = "table")
 else:
     ValueError("Invalid instance or year. Please check the values.")
 
@@ -769,7 +769,6 @@ def CAPEX_flexibleLoad_limitations(model, b):
     return (model.Cost_Expansion_Bat[b] * model.v_new_bat[b] <= model.Max_CAPEX_flex[b])
 model.CAPEXFlexibleLoadLim = pyo.Constraint(model.FlexibleLoad, rule=CAPEX_flexibleLoad_limitations)
 """
-
 def CAPEX_limitations(model):
     return model.I_inv <= model.Max_CAPEX
 model.CAPEXLim = pyo.Constraint(rule=CAPEX_limitations)
@@ -814,20 +813,30 @@ print("Solving...")
 
 # === Create Results folder ===
 
+
+
 opt = SolverFactory("gurobi", Verbose=True)
 opt.options["Crossover"] = 0  # Set crossover value
 opt.options["Method"] = 2  # Use the barrier method
 
 
-# === Create Results folder ===
+# === Create Results and input folder ===
 import datetime
 
-# Generate a single consistent timestamp (right after setting up solver)
+# Generate single consistent timestamp
 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
+# Clean filename-safe Excel name
 safe_excel_path = os.path.splitext(os.path.basename(excel_path))[0].replace(" ", "_").replace("-", "_")
-results_folder = f"Results/Results_instance{instance}_year{year}_{safe_excel_path}"
+
+# Create unique folder names
+results_folder = f"Results/Results_instance{instance}_year{year}_time{timestamp}"
+input_data_folder = f"Input_data/Input_instance{instance}_year{year}_time{timestamp}"
+
+# Create the folders
 os.makedirs(results_folder, exist_ok=True)
+os.makedirs(input_data_folder, exist_ok=True)
+
 
 # Clean up old Gurobi log files
 for f in os.listdir(results_folder):
@@ -837,6 +846,16 @@ for f in os.listdir(results_folder):
 # Step 1: Set a temp log file
 logfile_temp = os.path.join(results_folder, 'gurobi_log_temp.txt')
 opt.options['LogFile'] = logfile_temp
+print("✅ Created folders:")
+print("  Results:", os.path.exists(results_folder))
+print("  Input data:", os.path.exists(input_data_folder))
+
+
+# Step 3: Copy files
+input_extensions = (".tab", ".xlsx", ".csv", ".dat")
+for fname in os.listdir("."):
+    if os.path.isfile(fname) and not fname.endswith(".py") and fname.endswith(input_extensions):
+        shutil.copy2(fname, os.path.join(input_data_folder, fname))
 
 # Step 2: Start timing and solve
 start_time = time.time()
@@ -902,18 +921,18 @@ EXTRACT VALUE OF VARIABLES AND WRITE THEM INTO EXCEL FILE
 """
 print("Writing results to .xlsx...")
 
-def save_results_to_excel(model_instance, filename="Variable_Results.xlsx", max_rows_per_sheet=1_000_000):
+def save_results_to_excel(model_instance, instance, year, timestamp, max_rows_per_sheet=1_000_000):
     import pandas as pd
     from pyomo.environ import value
+
+    filename = f"Variable_Results_instance{instance}_year{year}_time{timestamp}.xlsx"
 
     # Ensure xlsxwriter is available
     try:
         import xlsxwriter
     except ImportError:
-        import subprocess
-        import sys
+        import subprocess, sys
         subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", "xlsxwriter"])
-
         import site
         site.ENABLE_USER_SITE = True
         site.addsitedir(site.getusersitepackages())
@@ -929,7 +948,7 @@ def save_results_to_excel(model_instance, filename="Variable_Results.xlsx", max_
                     var_value = value(var[index])
                 except ValueError:
                     var_value = 0
-                if abs(var_value) > 1e-6:  # Filter out near-zero values
+                if abs(var_value) > 1e-3:  # Only include significant values
                     var_data.append((index, var_value))
 
             if var_data:
@@ -941,16 +960,20 @@ def save_results_to_excel(model_instance, filename="Variable_Results.xlsx", max_
                 )
                 df = pd.concat([unpacked, df[var_name]], axis=1)
 
-                # Split into multiple sheets if over Excel limit
                 for i in range(0, len(df), max_rows_per_sheet):
                     df_chunk = df.iloc[i:i + max_rows_per_sheet]
                     sheet_title = f"{var_name[:25]}_{i // max_rows_per_sheet + 1}"
                     df_chunk.to_excel(writer, sheet_name=sheet_title, index=False)
 
     print(f"Variable results saved to {filename}")
+    return filename
+
 
 # Usage after solving the model
-save_results_to_excel(our_model, filename=os.path.join(results_folder, "Variable_Results.xlsx"))
+excel_filename = save_results_to_excel(our_model, instance, year, timestamp)
+shutil.move(excel_filename, os.path.join(results_folder, excel_filename))
+
+#save_results_to_excel(our_model, filename=os.path.join(results_folder, "Variable_Results.xlsx"))
 
 
 # === Write case and objective summary ===
@@ -958,6 +981,34 @@ save_results_to_excel(our_model, filename=os.path.join(results_folder, "Variable
 # Get the objective value
 objective_value = pyo.value(our_model.Objective)
 num_Nodes = len(our_model.Nodes) if hasattr(our_model, "Nodes") else "Unknown"
+
+# List of your branch counts
+branches = [
+    num_branches_to_firstStage,
+    num_branches_to_secondStage,
+    num_branches_to_thirdStage,
+    num_branches_to_fourthStage,
+    num_branches_to_fifthStage,
+    num_branches_to_sixthStage,
+    num_branches_to_seventhStage,
+    num_branches_to_eighthStage,
+    num_branches_to_ninthStage,
+    num_branches_to_tenthStage
+]
+
+# Compute cumulative products, stopping when 0 is hit
+cumulative = []
+product = 1
+for b in branches:
+    if b == 0:
+        break
+    product *= b
+    cumulative.append(product)
+
+# Get the maximum cumulative product (number of scenarios)
+num_scenarios = max(cumulative) if cumulative else 1
+
+#print("Number of scenarios:", num_scenarios)
 
 
 # Create contents
@@ -979,7 +1030,7 @@ Number of branches per stage:
 - Stage 9: {num_branches_to_ninthStage}
 - Stage 10: {num_branches_to_tenthStage}
 
-
+Number of Scenarios: {num_scenarios}
 Number of Nodes: {num_Nodes}
 Objective Value: {objective_value:.2f}
 """
@@ -990,18 +1041,10 @@ with open(os.path.join(results_folder, "case_and_objective_info.txt"), "w") as f
 
 
 
-# Step 1: Sanitize excel path
-safe_excel_path = os.path.splitext(os.path.basename(excel_path))[0].replace(" ", "_").replace("-", "_")
 
-# Step 2: Create input folder
-input_data_folder = f"Input_data/Input_instance{instance}_year{year}_{safe_excel_path}"
-os.makedirs(input_data_folder, exist_ok=True)
-
-# Step 3: Copy files
-input_extensions = (".tab", ".xlsx", ".csv", ".dat")
-for fname in os.listdir("."):
-    if os.path.isfile(fname) and not fname.endswith(".py") and fname.endswith(input_extensions):
-        shutil.copy2(fname, os.path.join(input_data_folder, fname))
+print("Working directory:", os.getcwd())
+print("Results folder will be:", results_folder)
+print("Input folder will be:", input_data_folder)
 
 """
 PLOT RESULTS
