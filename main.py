@@ -894,8 +894,8 @@ DISPLAY RESULTS??
 """
 print("Writing results to .csv...")
 
-#our_model.display('results.csv')
-#our_model.dual.display()
+our_model.display('results.csv')
+our_model.dual.display()
 print("-" * 70)
 print("Objective and running time:")
 print(f"Objective value for this mongo model is: {round(pyo.value(our_model.Objective),2)}")
