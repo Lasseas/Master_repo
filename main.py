@@ -894,8 +894,8 @@ DISPLAY RESULTS??
 """
 print("Writing results to .csv...")
 
-our_model.display('results.csv')
-our_model.dual.display()
+#our_model.display('results.csv')
+#our_model.dual.display()
 print("-" * 70)
 print("Objective and running time:")
 print(f"Objective value for this mongo model is: {round(pyo.value(our_model.Objective),2)}")
@@ -930,7 +930,7 @@ EXTRACT VALUE OF VARIABLES AND WRITE THEM INTO EXCEL FILE
 """
 
 print("Writing results to .xlsx...")
-
+"""
 def save_results_to_excel(model_instance, instance, year, timestamp, max_rows_per_sheet=1_000_000):
     import pandas as pd
     from pyomo.environ import value
@@ -982,7 +982,7 @@ def save_results_to_excel(model_instance, instance, year, timestamp, max_rows_pe
 # Usage after solving the model
 excel_filename = save_results_to_excel(our_model, instance, year, timestamp)
 shutil.move(excel_filename, os.path.join(results_folder, excel_filename))
-
+"""
 #save_results_to_excel(our_model, filename=os.path.join(results_folder, "Variable_Results.xlsx"))
 
 
