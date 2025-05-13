@@ -29,12 +29,11 @@ year = args.year
 
 # Define branch structures for each instance
 instance_config = {
-    1: (2, 2, 2, 2, 2, 2, 0, 0, 0, 0),
-    2: (2, 4, 4, 4, 4, 4, 0, 0, 0, 0),
-    3: (2, 5, 5, 5, 5, 5, 0, 0, 0, 0),
-    3: (2, 6, 6, 6, 6, 6, 0, 0, 0, 0),
-    5: (2, 8, 8, 8, 8, 8, 0, 0, 0, 0),
-    6: (2, 9, 9, 9, 9, 9, 0, 0, 0, 0),
+    1: (2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0),
+    2: (2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0),
+    3: (2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0),
+    4: (2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0),
+    5: (2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 }
 
 if instance not in instance_config:
@@ -50,7 +49,12 @@ if instance not in instance_config:
     num_branches_to_seventhStage,
     num_branches_to_eighthStage,
     num_branches_to_ninthStage,
-    num_branches_to_tenthStage
+    num_branches_to_tenthStage,
+    num_branches_to_eleventhStage,
+    num_branches_to_twelfthStage,
+    num_branches_to_thirteenthStage,
+    num_branches_to_fourteenthStage,
+    num_branches_to_fifteenthStage
 ) = instance_config[instance]
 
 
@@ -73,7 +77,7 @@ num_branches_to_eighthStage = 0
 num_branches_to_ninthStage = 0
 num_branches_to_tenthStage = 0
 """
-run_everything(excel_path, instance, year, num_branches_to_firstStage, num_branches_to_secondStage, num_branches_to_thirdStage, num_branches_to_fourthStage, num_branches_to_fifthStage, num_branches_to_sixthStage, num_branches_to_seventhStage, num_branches_to_eighthStage, num_branches_to_ninthStage, num_branches_to_tenthStage)
+run_everything(excel_path, instance, year, num_branches_to_firstStage, num_branches_to_secondStage, num_branches_to_thirdStage, num_branches_to_fourthStage, num_branches_to_fifthStage, num_branches_to_sixthStage, num_branches_to_seventhStage, num_branches_to_eighthStage, num_branches_to_ninthStage, num_branches_to_tenthStage, num_branches_to_eleventhStage, num_branches_to_twelfthStage, num_branches_to_thirteenthStage, num_branches_to_fourteenthStage, num_branches_to_fifteenthStage)
 
 
 
