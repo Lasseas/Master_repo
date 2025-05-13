@@ -29,14 +29,14 @@ year = args.year
 
 # Define branch structures for each instance
 instance_config = {
-    1: (2, 2, 2, 2, 2, 2, 2, 2, 0, 0),
-    2: (2, 3, 3, 3, 3, 3, 3, 3, 0, 0),
-    3: (2, 4, 4, 4, 4, 4, 4, 4, 0, 0),
-    4: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-    5: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-    6: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+    1: (100, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+    2: (5000, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+    3: (2, 2, 2, 2, 2, 2, 0, 0, 0, 0),
+    4: (2, 4, 4, 4, 4, 4, 0, 0, 0, 0),
+    5: (2, 5, 5, 5, 5, 5, 0, 0, 0, 0),
+    6: (2, 6, 6, 6, 6, 6, 0, 0, 0, 0),
+ 
 }
-
 if instance not in instance_config:
     raise ValueError(f"Invalid instance number: {instance}")
 
@@ -894,8 +894,8 @@ DISPLAY RESULTS??
 """
 print("Writing results to .csv...")
 
-our_model.display('results.csv')
-our_model.dual.display()
+#our_model.display('results.csv')
+#our_model.dual.display()
 print("-" * 70)
 print("Objective and running time:")
 print(f"Objective value for this mongo model is: {round(pyo.value(our_model.Objective),2)}")
