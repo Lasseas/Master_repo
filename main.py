@@ -928,7 +928,7 @@ with open(os.path.join(results_folder, "runtime_log.txt"), "w") as f:
 """
 EXTRACT VALUE OF VARIABLES AND WRITE THEM INTO EXCEL FILE
 """
-"""
+
 print("Writing results to .xlsx...")
 
 def save_results_to_excel(model_instance, instance, year, timestamp, max_rows_per_sheet=1_000_000):
@@ -984,7 +984,7 @@ excel_filename = save_results_to_excel(our_model, instance, year, timestamp)
 shutil.move(excel_filename, os.path.join(results_folder, excel_filename))
 
 #save_results_to_excel(our_model, filename=os.path.join(results_folder, "Variable_Results.xlsx"))
-"""
+
 
 # === Write case and objective summary ===
 
