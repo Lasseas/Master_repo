@@ -29,12 +29,12 @@ year = args.year
 
 # Define branch structures for each instance
 instance_config = {
-    1: (2, 5, 5, 5, 0, 0, 0, 0, 0, 0),
-    2: (2, 14, 14, 14, 0, 0, 0, 0, 0, 0),
-    3: (2, 16, 16, 16, 0, 0, 0, 0, 0, 0),
-    4: (2, 18, 18, 18, 0, 0, 0, 0, 0, 0),
-    5: (2, 60, 60, 0, 0, 0, 0, 0, 0, 0),
-    6: (2, 65, 65, 0, 0, 0, 0, 0, 0, 0),
+    1: (2, 2, 2, 2, 2, 2, 2, 2, 0, 0),
+    2: (2, 3, 3, 3, 3, 3, 3, 3, 0, 0),
+    3: (2, 4, 4, 4, 4, 4, 4, 4, 0, 0),
+    4: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+    5: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+    6: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 }
 
 if instance not in instance_config:
@@ -928,6 +928,7 @@ with open(os.path.join(results_folder, "runtime_log.txt"), "w") as f:
 """
 EXTRACT VALUE OF VARIABLES AND WRITE THEM INTO EXCEL FILE
 """
+"""
 print("Writing results to .xlsx...")
 
 def save_results_to_excel(model_instance, instance, year, timestamp, max_rows_per_sheet=1_000_000):
@@ -983,7 +984,7 @@ excel_filename = save_results_to_excel(our_model, instance, year, timestamp)
 shutil.move(excel_filename, os.path.join(results_folder, excel_filename))
 
 #save_results_to_excel(our_model, filename=os.path.join(results_folder, "Variable_Results.xlsx"))
-
+"""
 
 # === Write case and objective summary ===
 
