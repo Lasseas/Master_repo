@@ -33,7 +33,7 @@ excel_path = "NO1_Pulp_Paper_2024_combined historical data.xlsx"
 
 # Define branch structures for each case type
 case_configs = {
-    "wide": (2, 55, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+    "wide": (2, 55, 55, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
     "deep": (2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0),
     "max":  (2, 6, 6, 6, 6, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 }
@@ -482,7 +482,7 @@ model.MarketBalanceExport = pyo.Constraint(model.Parent_Node, model.Time, model.
 def Max_ID_Buy_Adjustment(model, n, t):
     nodes_in_last_stage = {n for (n, stage) in model.Nodes_in_stage if stage == model.Period.last()}
     if n not in nodes_in_last_stage:
-        return (model.x_ID_buy[n, t] <= 0.5*model.ID_Cap_Buy_volume[n, t])
+        return (model.x_ID_buy[n, t] <= 0.2*model.ID_Cap_Buy_volume[n, t])
     else:
         return pyo.Constraint.Skip
 model.MaxIDBuyAdjustment = pyo.Constraint(model.Nodes, model.Time, rule = Max_ID_Buy_Adjustment)
@@ -490,7 +490,7 @@ model.MaxIDBuyAdjustment = pyo.Constraint(model.Nodes, model.Time, rule = Max_ID
 def Max_ID_Sell_Adjustment(model, n, t):
     nodes_in_last_stage = {n for (n, stage) in model.Nodes_in_stage if stage == model.Period.last()}
     if n not in nodes_in_last_stage:
-        return (model.x_ID_sell[n, t] <= 0.5*model.ID_Cap_Sell_volume[n, t])
+        return (model.x_ID_sell[n, t] <= 0.2*model.ID_Cap_Sell_volume[n, t])
     else:
         return pyo.Constraint.Skip
 model.MaxIDSellAdjustment = pyo.Constraint(model.Nodes, model.Time, rule = Max_ID_Sell_Adjustment)
@@ -660,11 +660,11 @@ def max_capacity_down_bid(model, n, t):
 model.MaxCapacityDownBid = pyo.Constraint(model.Nodes, model.Time, rule=max_capacity_down_bid)
 
 def maximum_market_down_reserve_limit(model, n, t):
-    return model.x_DWN[n,t] <= 0.5*model.Res_Cap_Down_volume[n,t] #Limiting 
+    return model.x_DWN[n,t] <= 0.2*model.Res_Cap_Down_volume[n,t] #Limiting 
 model.MaxMarketDownReserveLimit = pyo.Constraint(model.Nodes, model.Time, rule=maximum_market_down_reserve_limit)
 
 def maximum_market_up_reserve_limit(model, n, t):
-    return model.x_UP[n,t] <= 0.5*model.Res_Cap_Up_volume[n,t]
+    return model.x_UP[n,t] <= 0.2*model.Res_Cap_Up_volume[n,t]
 model.MaxMarketUpReserveLimit = pyo.Constraint(model.Nodes, model.Time, rule=maximum_market_up_reserve_limit)
 
 ########################################################################
