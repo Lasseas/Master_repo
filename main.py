@@ -33,7 +33,7 @@ excel_path = "NO1_Pulp_Paper_2024_combined historical data.xlsx"
 
 # Define branch structures for each case type
 case_configs = {
-    "wide": (2, 55, 55, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+    "wide": (2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
     "deep": (2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0),
     "max":  (2, 6, 6, 6, 6, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 }
@@ -400,7 +400,7 @@ model.ActivationCost = pyo.Constraint(model.Parent_Node, model.Time, model.Perio
 
 def cost_DA(model, n, p, t, s):
     if (n,s) in model.Nodes_in_stage:
-        return model.I_DA[n, t] == model.Spot_Price[n, t] * (model.x_DA_buy[p, t] - model.x_DA_sell[p, t])
+        return model.I_DA[n, t] == model.Spot_Price[n, t] * (model.x_DA_buy[p, t] - 0.95*model.x_DA_sell[p, t])
     else:
         return pyo.Constraint.Skip
 model.DACost = pyo.Constraint(model.Parent_Node, model.Time, model.Period, rule=cost_DA) 
@@ -896,11 +896,11 @@ DISPLAY RESULTS??
 """
 print("Writing results to .csv...")
 
-our_model.display('results.csv')
-our_model.dual.display()
+#our_model.display('results.csv')
+#our_model.dual.display()
 print("-" * 70)
 print("Objective and running time:")
-print(f"Objective value for this mongo model is: {round(pyo.value(our_model.Objective),2)}")
+print(f"Objective value: {round(pyo.value(our_model.Objective),2)}")
 print(f"The instance was solved in {round(running_time, 4)} seconds🙂")
 print("-" * 70)
 print("Hardware details:")
@@ -958,8 +958,9 @@ def save_results_to_excel(model_instance, instance, year, timestamp, max_rows_pe
             for index in var:
                 try:
                     var_value = value(var[index])
-                except ValueError:
-                    var_value = 0
+                except:
+                    continue
+                #    var_value = 0
                 if abs(var_value) > 1e-3:  # Only include significant values
                     var_data.append((index, var_value))
 
