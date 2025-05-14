@@ -18,26 +18,25 @@ from pyomo.environ import *
 
 import argparse
 from Generate_data_files import run_everything
-
 parser = argparse.ArgumentParser(description="Run model instance")
 parser.add_argument("--instance", type=int, required=True, help="Instance number (e.g., 1–6)")
 parser.add_argument("--year", type=int, required=True, help="Year (e.g., 2025 or 2050)")
+parser.add_argument("--case", type=str, required=True, choices=["wide", "deep", "max"], help="Specify case type")
 args = parser.parse_args()
 
 instance = args.instance
 year = args.year
+case = args.case
 
-# Define branch structures for each instance
-instance_config = {
-    1: (2, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-    2: (2, 6, 6, 6, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-    3: (2, 6, 6, 6, 6, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-    4: (2, 4, 4, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0),
-    5: (2, 4, 4, 4, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0),
+excel_path = "NO1_Pulp_Paper_2024_combined historical data.xlsx"
+#excel_path = "NO1_Aluminium_2024_combined historical data.xlsx"
+
+# Define branch structures for each case type
+case_configs = {
+    "wide": (2, 55, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+    "deep": (2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0),
+    "max":  (2, 6, 6, 6, 6, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 }
-
-if instance not in instance_config:
-    raise ValueError(f"Invalid instance number: {instance}")
 
 (
     num_branches_to_firstStage,
@@ -55,31 +54,30 @@ if instance not in instance_config:
     num_branches_to_thirteenthStage,
     num_branches_to_fourteenthStage,
     num_branches_to_fifteenthStage
-) = instance_config[instance]
+) = case_configs[case]
 
 
-#excel_path = "NO1_Aluminum_2024_combined historical data.xlsx"
-excel_path = "NO1_Pulp_Paper_2024_combined historical data.xlsx"
 
-
-"""
-instance = 1                    # state which instance you would like to run for
-year = 2025                     # state which year you would like to run for
-
-num_branches_to_firstStage = 2 # Antall grener til det vi i LateX har definert som Omega^first
-num_branches_to_secondStage = 6
-num_branches_to_thirdStage = 6
-num_branches_to_fourthStage = 0
-num_branches_to_fifthStage = 0
-num_branches_to_sixthStage = 0
-num_branches_to_seventhStage = 0
-num_branches_to_eighthStage = 0
-num_branches_to_ninthStage = 0
-num_branches_to_tenthStage = 0
-"""
-run_everything(excel_path, instance, year, num_branches_to_firstStage, num_branches_to_secondStage, num_branches_to_thirdStage, num_branches_to_fourthStage, num_branches_to_fifthStage, num_branches_to_sixthStage, num_branches_to_seventhStage, num_branches_to_eighthStage, num_branches_to_ninthStage, num_branches_to_tenthStage, num_branches_to_eleventhStage, num_branches_to_twelfthStage, num_branches_to_thirteenthStage, num_branches_to_fourteenthStage, num_branches_to_fifteenthStage)
-
-
+run_everything(
+    excel_path,
+    instance,
+    year,
+    num_branches_to_firstStage,
+    num_branches_to_secondStage,
+    num_branches_to_thirdStage,
+    num_branches_to_fourthStage,
+    num_branches_to_fifthStage,
+    num_branches_to_sixthStage,
+    num_branches_to_seventhStage,
+    num_branches_to_eighthStage,
+    num_branches_to_ninthStage,
+    num_branches_to_tenthStage,
+    num_branches_to_eleventhStage,
+    num_branches_to_twelfthStage,
+    num_branches_to_thirteenthStage,
+    num_branches_to_fourteenthStage,
+    num_branches_to_fifteenthStage
+)
 
 
 
@@ -843,8 +841,8 @@ timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 safe_excel_path = os.path.splitext(os.path.basename(excel_path))[0].replace(" ", "_").replace("-", "_")
 
 # Create unique folder names
-results_folder = f"Results/Results_instance{instance}_year{year}_time{timestamp}"
-input_data_folder = f"Input_data/Input_instance{instance}_year{year}_time{timestamp}"
+results_folder = f"Results/Results_{case}_case_instance_{instance}_year_{year}_time_{timestamp}"
+input_data_folder = f"Input_data/Input_{case}_case_instance_{instance}_year_{year}_time_{timestamp}"
 
 # Create the folders
 os.makedirs(results_folder, exist_ok=True)
@@ -898,8 +896,8 @@ DISPLAY RESULTS??
 """
 print("Writing results to .csv...")
 
-#our_model.display('results.csv')
-#our_model.dual.display()
+our_model.display('results.csv')
+our_model.dual.display()
 print("-" * 70)
 print("Objective and running time:")
 print(f"Objective value for this mongo model is: {round(pyo.value(our_model.Objective),2)}")
@@ -934,7 +932,7 @@ EXTRACT VALUE OF VARIABLES AND WRITE THEM INTO EXCEL FILE
 """
 
 print("Writing results to .xlsx...")
-"""
+
 def save_results_to_excel(model_instance, instance, year, timestamp, max_rows_per_sheet=1_000_000):
     import pandas as pd
     from pyomo.environ import value
@@ -986,7 +984,7 @@ def save_results_to_excel(model_instance, instance, year, timestamp, max_rows_pe
 # Usage after solving the model
 excel_filename = save_results_to_excel(our_model, instance, year, timestamp)
 shutil.move(excel_filename, os.path.join(results_folder, excel_filename))
-"""
+
 #save_results_to_excel(our_model, filename=os.path.join(results_folder, "Variable_Results.xlsx"))
 
 
@@ -1007,8 +1005,13 @@ branches = [
     num_branches_to_seventhStage,
     num_branches_to_eighthStage,
     num_branches_to_ninthStage,
-    num_branches_to_tenthStage
-]
+    num_branches_to_tenthStage,
+    num_branches_to_eleventhStage,
+    num_branches_to_twelfthStage,
+    num_branches_to_thirteenthStage,
+    num_branches_to_fourteenthStage,
+    num_branches_to_fifteenthStage,
+    ]
 
 # Compute cumulative products, stopping when 0 is hit
 cumulative = []
@@ -1043,6 +1046,11 @@ Number of branches per stage:
 - Stage 8: {num_branches_to_eighthStage}
 - Stage 9: {num_branches_to_ninthStage}
 - Stage 10: {num_branches_to_tenthStage}
+- Stage 11: {num_branches_to_eleventhStage}
+- Stage 12: {num_branches_to_twelfthStage}
+- Stage 13: {num_branches_to_thirteenthStage}
+- Stage 14: {num_branches_to_fourteenthStage}
+- Stage 15: {num_branches_to_fifteenthStage}
 
 Number of Scenarios: {num_scenarios}
 Number of Nodes: {num_Nodes}
