@@ -33,9 +33,9 @@ excel_path = "NO1_Pulp_Paper_2024_combined historical data.xlsx"
 
 # Define branch structures for each case type
 case_configs = {
-    "wide": (2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-    "deep": (2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0),
-    "max":  (2, 6, 6, 6, 6, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    "wide": (2, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+    "deep": (2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0),
+    "max":  (2, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 }
 
 (
@@ -652,13 +652,13 @@ model.ReserveUpLimit = pyo.Constraint(model.Parent_Node, model.Time, model.Perio
 ########################################################################
 
 def max_capacity_up_bid(model, n, t):
-    return model.x_UP[n,t] <= 50
+    return model.x_UP[n,t] <= min(50, 0.2*model.Res_Cap_Up_volume[n,t])
 model.MaxCapacityUpBid = pyo.Constraint(model.Nodes, model.Time, rule=max_capacity_up_bid)
 
 def max_capacity_down_bid(model, n, t):
-    return model.x_DWN[n,t] <= 50
+    return model.x_DWN[n,t] <= min(50, 0.2*model.Res_Cap_Down_volume[n,t])
 model.MaxCapacityDownBid = pyo.Constraint(model.Nodes, model.Time, rule=max_capacity_down_bid)
-
+"""
 def maximum_market_down_reserve_limit(model, n, t):
     return model.x_DWN[n,t] <= 0.2*model.Res_Cap_Down_volume[n,t] #Limiting 
 model.MaxMarketDownReserveLimit = pyo.Constraint(model.Nodes, model.Time, rule=maximum_market_down_reserve_limit)
@@ -666,7 +666,7 @@ model.MaxMarketDownReserveLimit = pyo.Constraint(model.Nodes, model.Time, rule=m
 def maximum_market_up_reserve_limit(model, n, t):
     return model.x_UP[n,t] <= 0.2*model.Res_Cap_Up_volume[n,t]
 model.MaxMarketUpReserveLimit = pyo.Constraint(model.Nodes, model.Time, rule=maximum_market_up_reserve_limit)
-
+"""
 ########################################################################
 ############## FLEXIBLE ASSET CONSTRAINTS/STORAGE DYNAMICS #############
 ########################################################################
@@ -896,8 +896,8 @@ DISPLAY RESULTS??
 """
 print("Writing results to .csv...")
 
-#our_model.display('results.csv')
-#our_model.dual.display()
+our_model.display('results.csv')
+our_model.dual.display()
 print("-" * 70)
 print("Objective and running time:")
 print(f"Objective value: {round(pyo.value(our_model.Objective),2)}")
