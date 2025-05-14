@@ -33,7 +33,7 @@ excel_path = "NO1_Pulp_Paper_2024_combined historical data.xlsx"
 
 # Define branch structures for each case type
 case_configs = {
-    "wide": (2, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+    "wide": (2, 30, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
     "deep": (2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0),
     "max":  (2, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 }
@@ -620,7 +620,7 @@ model.MaxTotalUpDwnLoadShift = pyo.Constraint(model.Nodes_in_stage, model.Time, 
 ########################################################################
 ############## RESERVE MARKET PARTICIPATION LIMITS #####################
 ########################################################################
-
+"""
 def reserve_down_limit(model, n, p, t, s, e):
     if e == "Electricity" and (n,s) in model.Nodes_in_stage:  # Ensure e = EL
         return model.x_DWN[p, t] <= (
@@ -646,7 +646,7 @@ def reserve_up_limit(model, n, p, t, s, e):
     else:
         return pyo.Constraint.Skip
 model.ReserveUpLimit = pyo.Constraint(model.Parent_Node, model.Time, model.Period, model.EnergyCarrier, rule=reserve_up_limit)
-
+"""
 ########################################################################
 ############## UPPER-UPPER BOUND CAPACITY MARKET BIDS ##################
 ########################################################################
