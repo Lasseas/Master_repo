@@ -636,6 +636,7 @@ def run_everything(excel_path, instance, year, num_branches_to_firstStage, num_b
         "H2_Grid": 0,#150.1502,
         "CH4_Grid": 0,#39.479,
         "Biogas_Grid": 0,#64.5,
+        "Power_Grid": -1.162, #Plusskunde-fee
     }
 
 

@@ -400,7 +400,7 @@ model.ActivationCost = pyo.Constraint(model.Parent_Node, model.Time, model.Perio
 
 def cost_DA(model, n, p, t, s):
     if (n,s) in model.Nodes_in_stage:
-        return model.I_DA[n, t] == model.Spot_Price[n, t] * (model.x_DA_buy[p, t] - 0.95*model.x_DA_sell[p, t])
+        return model.I_DA[n, t] == model.Spot_Price[n, t] * (model.x_DA_buy[p, t] - model.x_DA_sell[p, t])
     else:
         return pyo.Constraint.Skip
 model.DACost = pyo.Constraint(model.Parent_Node, model.Time, model.Period, rule=cost_DA) 
