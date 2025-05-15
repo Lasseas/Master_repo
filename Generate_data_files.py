@@ -34,8 +34,8 @@ def run_everything(excel_path, instance, year, num_branches_to_firstStage, num_b
         "GasBoiler_CCS": 0,
         "CHP": 0,
         "CHP_CCS": 0,
-        "Biogas_Grid": 64.5, #dobbeltsjekk
-        "CH4_Grid": 39.479, #dobbeltsjekk
+        "Biogas_Grid": 64.5,
+        "CH4_Grid": 39.479,
         "CH4_H2_Mixer": 0,
         "DieselReserveGenerator": 148.8,
         "H2_Grid": 150.1502
