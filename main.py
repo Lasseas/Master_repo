@@ -17,9 +17,9 @@ from pyomo.environ import *
 ##################################################################
 
 import argparse
-from Generate_data_files import run_everything
+#from Generate_data_files import run_everything
 parser = argparse.ArgumentParser(description="Run model instance")
-parser.add_argument("--instance", type=int, required=True, help="Instance number (e.g., 1–6)")
+parser.add_argument("--instance", type=int, required=True, help="Instance number (e.g., 1–5)")
 parser.add_argument("--year", type=int, required=True, help="Year (e.g., 2025 or 2050)")
 parser.add_argument("--case", type=str, required=True, choices=["wide", "deep", "max"], help="Specify case type")
 args = parser.parse_args()
@@ -33,7 +33,7 @@ excel_path = "NO1_Pulp_Paper_2024_combined historical data.xlsx"
 
 # Define branch structures for each case type
 case_configs = {
-    "wide": (2, 30, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+    "wide": (2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
     "deep": (2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0),
     "max":  (2, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 }
@@ -57,7 +57,7 @@ case_configs = {
 ) = case_configs[case]
 
 
-
+"""
 run_everything(
     excel_path,
     instance,
@@ -79,7 +79,7 @@ run_everything(
     num_branches_to_fifteenthStage
 )
 
-
+"""
 
 
 #####################################################################################
@@ -325,8 +325,8 @@ model.y_activity = pyo.Var(model.Nodes, model.Time, model.Technology, model.Mode
 model.q_charge = pyo.Var(model.Nodes, model.Time, model.FlexibleLoad, domain= pyo.NonNegativeReals)
 model.q_discharge = pyo.Var(model.Nodes, model.Time, model.FlexibleLoad, domain= pyo.NonNegativeReals)
 model.q_SoC = pyo.Var(model.Nodes, model.Time, model.FlexibleLoad, domain= pyo.NonNegativeReals)
-model.v_new_tech = pyo.Var(model.Technology, domain = pyo.NonNegativeReals) 
-model.v_new_bat = pyo.Var(model.FlexibleLoad, domain = pyo.NonNegativeReals)
+model.v_new_tech = pyo.Var(model.Technology, domain = pyo.NonNegativeReals, bounds = (0,0)) 
+model.v_new_bat = pyo.Var(model.FlexibleLoad, domain = pyo.NonNegativeReals, bounds = (0,0))
 model.y_max = pyo.Var(model.Nodes, model.Month, domain = pyo.NonNegativeReals)
 model.d_flex = pyo.Var(model.Nodes, model.Time, model.EnergyCarrier, domain = pyo.NonNegativeReals)
 model.Up_Shift = pyo.Var(model.Nodes, model.Time, model.EnergyCarrier, domain = pyo.NonNegativeReals)
