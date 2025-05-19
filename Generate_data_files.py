@@ -676,20 +676,25 @@ def run_everything(excel_path, instance, year, num_branches_to_firstStage, num_b
     def get_number_of_periods_from_tab(filepath="Set_of_Periods.tab"):
         df = pd.read_csv(filepath, sep="\t")
         return len(df)
+    
     def generate_set_of_LoadShiftingPeriod(periods_tab="Set_of_Periods.tab", filename="Set_of_LoadShiftingPeriod.tab"):
         def data_generator():
             # Read the periods tab file
             df_periods = pd.read_csv(periods_tab, sep="\t")
-            
-            # Get the maximum period (last one)
-            last_period = df_periods["Periods"].max()
-            
-            # Create a new DataFrame with only that last period
-            df_last = pd.DataFrame({"LoadShiftingPeriod": [last_period]})
-            
-            yield df_last
 
-        # Use the make_tab_file function to write it
+            if excel_path == "NO1_Aluminum_2024_combined historical data.xlsx":
+                # Use all periods
+                df_all = pd.DataFrame({"LoadShiftingPeriod": df_periods["Periods"]})
+                yield df_all
+            elif excel_path == "NO1_Pulp_Paper_2024_combined historical data.xlsx":
+                # Use only the last period
+                last_period = df_periods["Periods"].max()
+                df_last = pd.DataFrame({"LoadShiftingPeriod": [last_period]})
+                yield df_last
+            else:
+                raise ValueError(f"Unknown excel_path: {excel_path}")
+
+        # Use the make_tab_file function to write the result
         make_tab_file(filename, data_generator())
 
     def generate_set_of_PeriodsInMonth(branch_counts, filename="Set_of_PeriodsInMonth.tab"):
@@ -1066,7 +1071,7 @@ def run_everything(excel_path, instance, year, num_branches_to_firstStage, num_b
     # Krever ca. 50 branches for 30% aktiveringsrate med 8t hviletid - Færre branches krever activation_rate.
     # For få branches vil gi en feilmelding (For få tilgjengelige barn...), så bare å prøve seg frem:)
 
-    def generate_activation_factors_with_rest_time(num_nodes, num_timesteps, parent_mapping, activation_rate=0.30, rest_hours=8):
+    def generate_activation_factors_with_rest_time(num_nodes, num_timesteps, parent_mapping, activation_rate=0.10, rest_hours=8):
     
         #Generate activation factors with 8 hours rest after activation.
         
@@ -1132,7 +1137,7 @@ def run_everything(excel_path, instance, year, num_branches_to_firstStage, num_b
         if excel_path == "NO1_Pulp_Paper_2024_combined historical data.xlsx":
             df_joint = generate_activation_factors(num_nodes, num_timesteps, parent_mapping)
         elif excel_path == "NO1_Aluminum_2024_combined historical data.xlsx":
-            df_joint = generate_activation_factors_with_rest_time(num_nodes, num_timesteps, parent_mapping, activation_rate=0.30, rest_hours=8)
+            df_joint = generate_activation_factors(num_nodes, num_timesteps, parent_mapping)
         else:
             raise ValueError("Invalid excel_path. Please provide a valid path.")
 
