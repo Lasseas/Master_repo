@@ -1103,34 +1103,48 @@ def run_everything(excel_path, instance, year, num_branches_to_firstStage, num_b
         return pd.DataFrame(rows)
     
     def generate_max_upshift_file(excel_path, num_timesteps, filename="Par_MaxUpShift.tab"):
+        shift_hours = range(8, 18)
+
         if "Pulp_Paper" in excel_path:
             factor = 0.1
+            industry = "pulp"
         elif "Aluminum" in excel_path:
             factor = 0.05
+            industry = "alu"
         else:
             raise ValueError("Invalid excel_path: must contain 'Pulp_Paper' or 'Aluminum'")
 
-        shift_hours = range(8, 18)
+        
         with open(filename, "w", encoding="utf-8") as f:
             f.write("Time\tMaximumUpShift\n")
             for t in range(1, num_timesteps + 1):
-                value = factor if t in shift_hours else 0
+                if industry == "alu":
+                    value = factor
+                elif industry == "pulp":
+                    value = factor if t in shift_hours else 0
                 f.write(f"{t}\t{value}\n")
 
 
     def generate_max_downshift_file(excel_path, num_timesteps, filename="Par_MaxDwnShift.tab"):
+        shift_hours = range(8, 18)
+
         if "Pulp_Paper" in excel_path:
             factor = 0.3
+            industry = "pulp"
         elif "Aluminum" in excel_path:
             factor = 0.2
+            industry = "alu"
         else:
             raise ValueError("Invalid excel_path: must contain 'Pulp_Paper' or 'Aluminum'")
 
-        shift_hours = range(8, 18)
+        
         with open(filename, "w", encoding="utf-8") as f:
             f.write("Time\tMaximumDwnShift\n")
             for t in range(1, num_timesteps + 1):
-                value = factor if t in shift_hours else 0
+                if industry == "alu":
+                    value = factor
+                elif industry == "pulp":
+                    value = factor if t in shift_hours else 0
                 f.write(f"{t}\t{value}\n")
 
     
