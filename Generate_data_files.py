@@ -686,7 +686,7 @@ def run_everything(excel_path, instance, year, num_branches_to_firstStage, num_b
                 # Use all periods
                 df_all = pd.DataFrame({"LoadShiftingPeriod": df_periods["Periods"]})
                 yield df_all
-            elif excel_path == "NO1_Pulp_Paper_2024_combined historical data.xlsx":
+            elif excel_path == "NO1_Pulp_Paper_2024_combined historical data.xlsx" or excel_path == "NO1_Pulp_Paper_2024_combined historical data_Uten_SatSun.xlsx":
                 # Use only the last period
                 last_period = df_periods["Periods"].max()
                 df_last = pd.DataFrame({"LoadShiftingPeriod": [last_period]})
@@ -1134,7 +1134,7 @@ def run_everything(excel_path, instance, year, num_branches_to_firstStage, num_b
 
 
     def generate_joint_regulation_activation_files(num_nodes, num_timesteps, up_filename = "Par_ActivationFactor_Up_Reg.tab", down_filename = "Par_ActivationFactor_Dwn_Reg.tab"):
-        if excel_path == "NO1_Pulp_Paper_2024_combined historical data.xlsx":
+        if excel_path == "NO1_Pulp_Paper_2024_combined historical data.xlsx" or excel_path == "NO1_Pulp_Paper_2024_combined historical data_Uten_SatSun.xlsx":
             df_joint = generate_activation_factors(num_nodes, num_timesteps, parent_mapping)
         elif excel_path == "NO1_Aluminum_2024_combined historical data.xlsx":
             df_joint = generate_activation_factors(num_nodes, num_timesteps, parent_mapping)

@@ -28,8 +28,9 @@ instance = args.instance
 year = args.year
 case = args.case
 
+excel_path = "NO1_Pulp_Paper_2024_combined historical data_Uten_SatSun.xlsx"
 #excel_path = "NO1_Pulp_Paper_2024_combined historical data.xlsx"
-excel_path = "NO1_Aluminum_2024_combined historical data.xlsx"
+#excel_path = "NO1_Aluminum_2024_combined historical data.xlsx"
 
 # Define branch structures for each case type
 case_configs = {
