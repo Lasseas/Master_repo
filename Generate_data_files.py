@@ -22,23 +22,24 @@ def run_everything(excel_path, instance, year, num_branches_to_firstStage, num_b
     energy_carriers = ["Electricity", "LT", "MT", "H2", "CH4", "Biogas", "CH4_H2_Mix", "DummyFuel"]
     StorageTech = ["BESS_Li_Ion_1", "BESS_Redox_1", "CEAS_1", "Flywheel_1", "Hot_Water_Tank_LT_1", "H2_Storage_1", "CH4_Storage_1"]
 
-    Cost_energy = {
-        "Power_Grid": 0,
-        "ElectricBoiler": 0,
-        "HP_LT": 0,
-        "HP_MT": 0,
-        "PV": 0,
-        "P2G": 0,
-        "G2P": 0,
-        "GasBoiler": 0,
-        "GasBoiler_CCS": 0,
-        "CHP": 0,
-        "CHP_CCS": 0,
-        "Biogas_Grid": 64.5,
-        "CH4_Grid": 39.479,
-        "CH4_H2_Mixer": 0,
-        "DieselReserveGenerator": 148.8,
-        "H2_Grid": 150.1502
+    cost_activity = {
+    "Power_Grid": {1: 0, 2: -1.162, 3: 2000, 4: -2000}, # 1 = Import, 2 = Export, 3 = RT_Import, 4 = RT_Export 
+    "ElectricBoiler": {1: 0, 2: 0, 3: 0}, #1 = LT, 2 = MT, 3 = Dummy
+    "HP_LT": {1: 0, 2: 0}, #1 = LT, 2 = Dummy
+    "HP_MT": {1: 0, 2: 0, 3: 0}, #1 = LT, 2 = MT, 3 = Dummy
+    "PV" : {1: 0},
+    "P2G": {1: 0},
+    "G2P": {1: 0},
+    "GasBoiler": {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}, #1 = LT (CH4 mix), 2 = MT (CH4 mix), 3 = LT (CH4), 4 = MT (CH4), 5 = LT (Biogas), 6 = MT (Biogas)
+    "GasBoiler_CCS": {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}, #1 = LT (CH4 mix), 2 = MT (CH4 mix), 3 = LT (CH4), 4 = MT (CH4), 5 = LT (Biogas), 6 = MT (Biogas)
+    "CHP": {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}, #1 = LT (CH4 mix), 2 = MT (CH4 mix), 3 = LT (CH4), 4 = MT (CH4), 5 = LT (Biogas), 6 = MT (Biogas)
+    "CHP_CCS": {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}, #1 = LT (CH4 mix), 2 = MT (CH4 mix), 3 = LT (CH4), 4 = MT (CH4), 5 = LT (Biogas), 6 = MT (Biogas)
+    "Biogas_Grid": {1: 64.5, 2: 0}, #1 = Import, 2 = Export
+    "CH4_Grid": {1: 39.479, 2: 0}, #1 = Import, 2 = Export
+    "CH4_H2_Mixer": {1: 0},
+    "DieselReserveGenerator": {1: 148.8},
+    "H2_Grid": {1: 150.1502, 2: 0}, #1 = Import, 2 = Export
+    "Dummy_Grid": {1: 0} #1 = Export
     }
 
 
@@ -639,13 +640,6 @@ def run_everything(excel_path, instance, year, num_branches_to_firstStage, num_b
         "Dummy_Grid": 1.0,
     }
 
-    Cost_export = {
-        "H2_Grid": 0,#150.1502,
-        "CH4_Grid": 0,#39.479,
-        "Biogas_Grid": 0,#64.5,
-        "Power_Grid": -1.162, #Plusskunde-fee
-    }
-
 
 
     import pprint
@@ -764,62 +758,32 @@ def run_everything(excel_path, instance, year, num_branches_to_firstStage, num_b
     ##########
     ## Additional Parameter generation functions ###
     ##########
-
-
-    def generate_cost_energy(num_nodes, num_timesteps, technologies, cost_energy, filename = "Par_EnergyCost.tab"):
+    def generate_cost_activity(num_nodes, num_timesteps, cost_activity, filename="Par_ActivityCost.tab"):
         def data_generator(chunk_size=10_000_000):
             rows = []
             count = 0
             for node in range(num_firstStageNodes + 1, num_nodes + 1):
-                for tech in technologies:
-                    for t in range(1, num_timesteps + 1):
-                        # If cost_energy is a dict, get the cost for the current technology.
-                        # Otherwise, assume cost_energy is a constant value.
-                        cost = cost_energy.get(tech, 0.0) if isinstance(cost_energy, dict) else cost_energy
-                        rows.append({"Node": node, "Time": t, "Technology": tech, "Cost": cost})
-                        count += 1
-                        if count % chunk_size == 0:
-                            yield pd.DataFrame(rows)
-                            rows = []
+                for tech, mode_costs in cost_activity.items():
+                    for mode in mode_costs:
+                        for t in range(1, num_timesteps + 1):
+                            cost = mode_costs[mode]
+                            rows.append({
+                                "Node": node,
+                                "Time": t,
+                                "Technology": tech,
+                                "Operational_mode": mode,
+                                "Cost": cost
+                            })
+                            count += 1
+                            if count % chunk_size == 0:
+                                yield pd.DataFrame(rows)
+                                rows = []
             if rows:
                 yield pd.DataFrame(rows)
 
         make_tab_file(filename, data_generator())
 
-
-    def generate_cost_export(num_nodes, num_timesteps, technologies, cost_export, filename = "Par_ExportCost.tab"):
-        def data_generator(chunk_size=10_000_000):
-            rows = []
-            count = 0
-            for node in range(num_firstStageNodes + 1, num_nodes + 1):
-                for tech in technologies:
-                    for t in range(1, num_timesteps + 1):
-                        tech_cost = cost_export.get(tech, 0.0)
-                        if isinstance(tech_cost, dict) and (node in tech_cost):
-                            node_cost = tech_cost[node]
-                            if isinstance(node_cost, dict):
-                                cost = node_cost.get(t, 0.0)
-                            elif isinstance(node_cost, list):
-                                cost = node_cost[t - 1] if len(node_cost) >= t else 0.0
-                            else:
-                                cost = node_cost
-                        else:
-                            if isinstance(tech_cost, dict):
-                                cost = tech_cost.get(t, 0.0)
-                            elif isinstance(tech_cost, list):
-                                cost = tech_cost[t - 1] if len(tech_cost) >= t else 0.0
-                            else:
-                                cost = tech_cost
-                        rows.append({"Node": node, "Time": t, "Technology": tech, "CostExport": cost})
-                        count += 1
-                        if count % chunk_size == 0:
-                            yield pd.DataFrame(rows)
-                            rows = []
-            if rows:
-                yield pd.DataFrame(rows)
-        make_tab_file(filename, data_generator())
-
-
+    
     def generate_CapacityUpPrice(num_nodes, num_timesteps, CapacityUpPrice, filename = "Par_aFRR_UP_CAP_price.tab"):
         def data_generator(chunk_size=10_000_000):
             rows = []
@@ -1317,8 +1281,7 @@ def run_everything(excel_path, instance, year, num_branches_to_firstStage, num_b
     ########################### GENERATE PARAMETERS ##########################
     ##########################################################################
 
-    generate_cost_energy(num_nodes, num_timesteps, technologies, Cost_energy)
-    generate_cost_export(num_nodes, num_timesteps, technologies, Cost_export)
+    generate_cost_activity(num_nodes, num_timesteps, cost_activity)
     generate_CapacityUpPrice(num_nodes, num_timesteps, CapacityUpPrice)
     generate_CapacityDownPrice(num_nodes, num_timesteps, CapacityDwnPrice)
     generate_ActivationUpPrice(num_nodes, num_timesteps, ActivationUpPrice)

@@ -28,9 +28,9 @@ instance = args.instance
 year = args.year
 case = args.case
 
-#excel_path = "NO1_Pulp_Paper_2024_combined historical data_Uten_SatSun.xlsx"
+excel_path = "NO1_Pulp_Paper_2024_combined historical data_Uten_SatSun.xlsx"
 #excel_path = "NO1_Pulp_Paper_2024_combined historical data.xlsx"
-excel_path = "NO1_Aluminum_2024_combined historical data.xlsx"
+#excel_path = "NO1_Aluminum_2024_combined historical data.xlsx"
 
 # Define branch structures for each case type
 case_configs = {
@@ -189,9 +189,10 @@ PARAMETERS
 #Declaring Parameters
 print("Declaring parameters...")
 
-model.Cost_Energy = pyo.Param(model.Nodes, model.Time, model.Technology)  # Cost of using energy source i at time t
+#model.Cost_Energy = pyo.Param(model.Nodes, model.Time, model.Technology)  # Cost of using energy source i at time t
+model.cost_activity = pyo.Param(model.Nodes, model.Time, model.Technology, model.Mode_of_operation) #Cost of using technology i in mode o at time t
 model.Cost_Battery = pyo.Param(model.FlexibleLoad)
-model.Cost_Export = pyo.Param(model.Nodes, model.Time, model.Technology)  # Income from exporting energy to the grid at time t
+#model.Cost_Export = pyo.Param(model.Nodes, model.Time, model.Technology)  # Income from exporting energy to the grid at time t
 model.Cost_Expansion_Tec = pyo.Param(model.Technology) #Capacity expansion cost
 model.Cost_Expansion_Bat = pyo.Param(model.FlexibleLoad) #Capacity expansion cost
 model.Cost_Emission = pyo.Param() #Carbon price
@@ -239,9 +240,10 @@ model.Res_Cap_Down_volume = pyo.Param(model.Nodes, model.Time) #Volume of total 
 #Reading the Parameters, and loading the data
 print("Reading parameters...")
 
-data.load(filename="Par_EnergyCost.tab", param=model.Cost_Energy, format = "table")
+#data.load(filename="Par_EnergyCost.tab", param=model.Cost_Energy, format = "table")
+data.load(filename="Par_ActivityCost.tab", param=model.cost_activity, format = "table")
 data.load(filename="Par_BatteryCost.tab", param=model.Cost_Battery, format = "table")
-data.load(filename="Par_ExportCost.tab", param=model.Cost_Export, format = "table")
+#data.load(filename="Par_ExportCost.tab", param=model.Cost_Export, format = "table")
 data.load(filename="Par_CostExpansion_Tec.tab", param=model.Cost_Expansion_Tec, format = "table")
 data.load(filename="Par_CostExpansion_Bat.tab", param=model.Cost_Expansion_Bat, format = "table")
 if instance == 1 and year == 2025:
@@ -430,11 +432,11 @@ model.OPEXCost = pyo.Constraint(model.Nodes_in_stage, model.Time, rule=cost_opex
 """
 def cost_opex(model, n, s, t):
     return model.I_OPEX[n, t] == (sum(
-                model.y_activity[n, t, i, o] * (model.Cost_Energy[n, t, i] 
+                model.y_activity[n, t, i, o] * (model.cost_activity[n, t, i, o] 
                 + model.Carbon_Intensity[i, o] * model.Cost_Emission)
                 for (i, e, o) in model.TechnologyToEnergyCarrier 
             ) 
-            - sum(model.Cost_Export[n, t, i] * model.y_activity[n, t, i, o] for (i, e, o) in model.EnergyCarrierToTechnology)
+            - sum(model.cost_activity[n, t, i, o] * model.y_activity[n, t, i, o] for (i, e, o) in model.EnergyCarrierToTechnology)
             + sum(model.Cost_Battery[b] * model.q_discharge[n, t, b] for b in model.FlexibleLoad)
             + sum(model.Cost_LS[e]*model.Dwn_Shift[n, t, e] for e in model.EnergyCarrier)
     )
@@ -807,7 +809,7 @@ print("Building instance...")
 
 our_model = model.create_instance(data)   
 our_model.dual = pyo.Suffix(direction=pyo.Suffix.IMPORT) #Import dual values into solver results
-#import pdb; pdb.set_trace()
+import pdb; pdb.set_trace()
 
 """
 SOLVING PROBLEM
