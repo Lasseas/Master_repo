@@ -1137,7 +1137,39 @@ def run_everything(excel_path, instance, year, num_branches_to_firstStage, num_b
                     })
 
         return pd.DataFrame(rows)
+    
+    def generate_max_upshift_file(excel_path, num_timesteps, filename="Par_MaxUpShift.tab"):
+        if "Pulp_Paper" in excel_path:
+            factor = 0.1
+        elif "Aluminum" in excel_path:
+            factor = 0.05
+        else:
+            raise ValueError("Invalid excel_path: must contain 'Pulp_Paper' or 'Aluminum'")
 
+        shift_hours = range(8, 18)
+        with open(filename, "w", encoding="utf-8") as f:
+            f.write("Time\tMaximumUpShift\n")
+            for t in range(1, num_timesteps + 1):
+                value = factor if t in shift_hours else 0
+                f.write(f"{t}\t{value}\n")
+
+
+    def generate_max_downshift_file(excel_path, num_timesteps, filename="Par_MaxDwnShift.tab"):
+        if "Pulp_Paper" in excel_path:
+            factor = 0.3
+        elif "Aluminum" in excel_path:
+            factor = 0.2
+        else:
+            raise ValueError("Invalid excel_path: must contain 'Pulp_Paper' or 'Aluminum'")
+
+        shift_hours = range(8, 18)
+        with open(filename, "w", encoding="utf-8") as f:
+            f.write("Time\tMaximumDwnShift\n")
+            for t in range(1, num_timesteps + 1):
+                value = factor if t in shift_hours else 0
+                f.write(f"{t}\t{value}\n")
+
+    
 
 
     def generate_joint_regulation_activation_files(num_nodes, num_timesteps, up_filename = "Par_ActivationFactor_Up_Reg.tab", down_filename = "Par_ActivationFactor_Dwn_Reg.tab"):
@@ -1303,6 +1335,8 @@ def run_everything(excel_path, instance, year, num_branches_to_firstStage, num_b
     generate_Res_CapacityUpVolume(num_nodes, num_timesteps, Res_CapacityUpVolume)
     generate_ID_Capacity_Sell_Volume(num_nodes, num_timesteps, ID_Capacity_Sell_Volume)
     generate_ID_Capacity_Buy_Volume(num_nodes, num_timesteps, ID_Capacity_Buy_Volume)
+    generate_max_upshift_file(excel_path, num_timesteps=24)
+    generate_max_downshift_file(excel_path, num_timesteps=24)
 
 
   # Call them after Set_of_Periods.tab is created

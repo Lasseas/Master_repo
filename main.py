@@ -28,9 +28,9 @@ instance = args.instance
 year = args.year
 case = args.case
 
-excel_path = "NO1_Pulp_Paper_2024_combined historical data_Uten_SatSun.xlsx"
+#excel_path = "NO1_Pulp_Paper_2024_combined historical data_Uten_SatSun.xlsx"
 #excel_path = "NO1_Pulp_Paper_2024_combined historical data.xlsx"
-#excel_path = "NO1_Aluminum_2024_combined historical data.xlsx"
+excel_path = "NO1_Aluminum_2024_combined historical data.xlsx"
 
 # Define branch structures for each case type
 case_configs = {
@@ -121,7 +121,7 @@ def read_all_sheets(excel):
         print(f"Saved file: {output_filename}")
 
 # Call the function with your Excel file
-read_all_sheets('Input_data_With_dummyGrid.xlsx')
+read_all_sheets('Input_data_With_dummyGrid_and_RT.xlsx')
 
 ####################################################################
 ######################### MODEL SPECIFICATIONS #####################
@@ -739,7 +739,7 @@ model.ExportLimitation = pyo.Constraint(model.Nodes_in_stage, model.Time, model.
 """
 def peak_load(model, n, s, t, m, i, e, o):
     if i == 'Power_Grid' and e == 'Electricity' and (m,s) in model.PeriodInMonth:
-        return (model.y_out[n, t, i, e, o] <= model.y_max[n, m])
+        return sum(model.y_out[n, t, i, e, o] for o in model.Mode_of_operation if (i,e,o) in model.TechnologyToEnergyCarrier) <= model.y_max[n, m]
     else:
         return pyo.Constraint.Skip
 model.PeakLoad = pyo.Constraint(model.Nodes_in_stage, model.Time, model.Month, model.TechnologyToEnergyCarrier, rule=peak_load)
