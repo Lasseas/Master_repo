@@ -35,3 +35,4 @@ Power_Grid	Electricity	2	1.0
 Biogas_Grid	Biogas	2	1.0
 CH4_Grid	CH4	2	1.0
 H2_Grid	H2	2	1.0
+Dummy_Grid	DummyFuel	1	1.0

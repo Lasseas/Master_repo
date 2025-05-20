@@ -15,3 +15,4 @@ CH4_Grid	2000000.0
 CH4_H2_Mixer	0.0
 DieselReserveGenerator	251.072
 H2_Grid	2000000.0
+Dummy_Grid	2000000.0

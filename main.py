@@ -36,7 +36,7 @@ excel_path = "NO1_Pulp_Paper_2024_combined historical data_Uten_SatSun.xlsx"
 case_configs = {
     "wide": (2, 30, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
     "deep": (2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0),
-    "max":  (2, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    "max":  (2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 }
 
 (
@@ -121,7 +121,7 @@ def read_all_sheets(excel):
         print(f"Saved file: {output_filename}")
 
 # Call the function with your Excel file
-read_all_sheets('Test_data_simple_extended_reduced.xlsx')
+read_all_sheets('Input_data_With_dummyGrid.xlsx')
 
 ####################################################################
 ######################### MODEL SPECIFICATIONS #####################

@@ -18,8 +18,8 @@ def run_everything(excel_path, instance, year, num_branches_to_firstStage, num_b
     num_nodesInlastStage = max(num_branches_to_firstStage, num_branches_to_firstStage*num_branches_to_secondStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage*num_branches_to_ninthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage*num_branches_to_ninthStage*num_branches_to_tenthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage*num_branches_to_ninthStage*num_branches_to_tenthStage*num_branches_to_eleventhStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage*num_branches_to_ninthStage*num_branches_to_tenthStage*num_branches_to_eleventhStage*num_branches_to_twelfthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage*num_branches_to_ninthStage*num_branches_to_tenthStage*num_branches_to_eleventhStage*num_branches_to_twelfthStage*num_branches_to_thirteenthStage, num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage*num_branches_to_ninthStage*num_branches_to_tenthStage*num_branches_to_eleventhStage*num_branches_to_twelfthStage*num_branches_to_thirteenthStage*num_branches_to_fourteenthStage,num_branches_to_firstStage*num_branches_to_secondStage*num_branches_to_thirdStage*num_branches_to_fourthStage*num_branches_to_fifthStage*num_branches_to_sixthStage*num_branches_to_seventhStage*num_branches_to_eighthStage*num_branches_to_ninthStage*num_branches_to_tenthStage*num_branches_to_eleventhStage*num_branches_to_twelfthStage*num_branches_to_thirteenthStage*num_branches_to_fourteenthStage*num_branches_to_fifteenthStage)
 
 
-    technologies = ["Power_Grid", "ElectricBoiler", "HP_LT", "HP_MT", "PV", "P2G", "G2P", "GasBoiler", "GasBoiler_CCS", "CHP", "CHP_CCS", "Biogas_Grid", "CH4_Grid", "CH4_H2_Mixer", "DieselReserveGenerator", "H2_Grid"]
-    energy_carriers = ["Electricity", "LT", "MT", "H2", "CH4", "Biogas", "CH4_H2_Mix"]
+    technologies = ["Power_Grid", "ElectricBoiler", "HP_LT", "HP_MT", "PV", "P2G", "G2P", "GasBoiler", "GasBoiler_CCS", "CHP", "CHP_CCS", "Biogas_Grid", "CH4_Grid", "CH4_H2_Mixer", "DieselReserveGenerator", "H2_Grid", "Dummy_Grid"]
+    energy_carriers = ["Electricity", "LT", "MT", "H2", "CH4", "Biogas", "CH4_H2_Mix", "DummyFuel"]
     StorageTech = ["BESS_Li_Ion_1", "BESS_Redox_1", "CEAS_1", "Flywheel_1", "Hot_Water_Tank_LT_1", "H2_Storage_1", "CH4_Storage_1"]
 
     Cost_energy = {
@@ -228,7 +228,8 @@ def run_everything(excel_path, instance, year, num_branches_to_firstStage, num_b
                 "CH4_Grid": 1_000_000,
                 "CH4_H2_Mixer": 0,
                 "DieselReserveGenerator": 125.536,
-                "H2_Grid": 1_000_000 
+                "H2_Grid": 1_000_000,
+                "Dummy_Grid": 1_000_000
             }
             
 
@@ -258,7 +259,8 @@ def run_everything(excel_path, instance, year, num_branches_to_firstStage, num_b
                 "CH4_Grid": 1_000_000,
                 "CH4_H2_Mixer": 0,
                 "DieselReserveGenerator": 123.99813,
-                "H2_Grid": 1_000_000
+                "H2_Grid": 1_000_000,
+                "Dummy_Grid": 1_000_000
             }
             
             CostExpansion_Bat = {
@@ -292,7 +294,8 @@ def run_everything(excel_path, instance, year, num_branches_to_firstStage, num_b
                 "CH4_Grid": 1_000_000,
                 "CH4_H2_Mixer": 0,
                 "DieselReserveGenerator": 100.4288,
-                "H2_Grid": 1_000_000
+                "H2_Grid": 1_000_000,
+                "Dummy_Grid": 1_000_000
             }
 
             CostExpansion_Bat = {
@@ -322,7 +325,8 @@ def run_everything(excel_path, instance, year, num_branches_to_firstStage, num_b
                 "CH4_Grid": 1_000_000,
                 "CH4_H2_Mixer": 0,
                 "DieselReserveGenerator": 99.198504,
-                "H2_Grid": 1_000_000
+                "H2_Grid": 1_000_000,
+                "Dummy_Grid": 1_000_000
             }
 
             CostExpansion_Bat = {
@@ -357,7 +361,8 @@ def run_everything(excel_path, instance, year, num_branches_to_firstStage, num_b
                 "CH4_Grid": 1_000_000,
                 "CH4_H2_Mixer": 0,
                 "DieselReserveGenerator": 150.6432,
-                "H2_Grid": 1_000_000
+                "H2_Grid": 1_000_000,
+                "Dummy_Grid": 1_000_000
             }
 
             CostExpansion_Bat = {
@@ -387,7 +392,8 @@ def run_everything(excel_path, instance, year, num_branches_to_firstStage, num_b
                 "CH4_Grid": 1_000_000,
                 "CH4_H2_Mixer": 0,
                 "DieselReserveGenerator": 148.797756,
-                "H2_Grid": 1_000_000
+                "H2_Grid": 1_000_000,
+                "Dummy_Grid": 1_000_000
             }
 
             CostExpansion_Bat = {
@@ -629,7 +635,8 @@ def run_everything(excel_path, instance, year, num_branches_to_firstStage, num_b
         "CH4_Grid": 0.8,
         "CH4_H2_Mixer": 1.0,
         "DieselReserve_Generator": 0.98,
-        "H2_Grid": 0.8
+        "H2_Grid": 0.8,
+        "Dummy_Grid": 1.0,
     }
 
     Cost_export = {
