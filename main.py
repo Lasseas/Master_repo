@@ -899,8 +899,8 @@ DISPLAY RESULTS??
 """
 print("Writing results to .csv...")
 
-our_model.display('results.csv')
-our_model.dual.display()
+#our_model.display('results.csv')
+#our_model.dual.display()
 print("-" * 70)
 print("Objective and running time:")
 print(f"Objective value: {round(pyo.value(our_model.Objective),2)}")
@@ -955,6 +955,8 @@ def save_results_to_excel(model_instance, instance, year, timestamp, max_rows_pe
 
     with pd.ExcelWriter(filename, engine="xlsxwriter") as writer:
         for var in model_instance.component_objects(pyo.Var, active=True):
+            if var.name not in ["v_new_tech", "v_new_bat", "Not_Supplied_Energy"]:
+                continue
             var_name = var.name
             var_data = []
 
