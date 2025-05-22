@@ -430,6 +430,7 @@ model.Up_Shift = pyo.Var(model.Nodes, model.Time, model.EnergyCarrier, domain = 
 model.Dwn_Shift = pyo.Var(model.Nodes, model.Time, model.EnergyCarrier, domain = pyo.NonNegativeReals)
 model.aggregated_Up_Shift = pyo.Var(model.Nodes, model.EnergyCarrier, domain = pyo.NonNegativeReals)
 model.aggregated_Dwn_Shift = pyo.Var(model.Nodes, model.EnergyCarrier, domain = pyo.NonNegativeReals)
+model.Not_Supplied_Energy = pyo.Var(model.Nodes, model.Time, model.EnergyCarrier, domain = pyo.NonNegativeReals)
 model.I_inv = pyo.Var()
 model.I_GT = pyo.Var()
 model.I_cap_bid = pyo.Var(model.Time)
@@ -532,7 +533,7 @@ def cost_opex(model, n, s, t):
             ) 
             - sum(model.cost_activity[n, t, i, o] * model.y_activity[n, t, i, o] for (i, e, o) in model.EnergyCarrierToTechnology)
             + sum(model.Cost_Battery[b] * model.q_discharge[n, t, b] for b in model.FlexibleLoad)
-            + sum(model.Cost_LS[e]*model.Dwn_Shift[n, t, e] for e in model.EnergyCarrier)
+            + sum(model.Cost_LS[e]*model.Dwn_Shift[n, t, e] + 10_000 * model.Not_Supplied_Energy[n, t, e] for e in model.EnergyCarrier)
     )
 model.OPEXCost = pyo.Constraint(model.Nodes_in_stage, model.Time, rule=cost_opex)
 
@@ -555,7 +556,7 @@ def energy_balance(model, n, s, t, e):
 model.EnergyBalance = pyo.Constraint(model.Nodes_in_stage, model.Time, model.EnergyCarrier, rule=energy_balance)
 
 def Defining_flexible_demand(model, n, s, t, e):
-    return model.d_flex[n, t, e] == model.Demand[n, t, e] + model.Up_Shift[n, t, e] - model.Dwn_Shift[n, t, e]
+    return model.d_flex[n, t, e] == model.Demand[n, t, e] + model.Up_Shift[n, t, e] - model.Dwn_Shift[n, t, e] - model.Not_Supplied_Energy[n, t, e]
 model.DefiningFlexibleDemand = pyo.Constraint(model.Nodes_in_stage, model.Time, model.EnergyCarrier, rule = Defining_flexible_demand)
 
 #####################################################################################
@@ -904,13 +905,23 @@ print("Building instance...")
 our_model = model.create_instance(data)  
 
 if case == "max_out":
-    print("🔒 Fixing v_new_tech and v_new_bat for out-of-sample run...")
+    print("🔒 Fixing v_new_tech and v_new_bat to 0 for out-of-sample run...")
 
     for tech in our_model.Technology:
-        our_model.v_new_tech[tech].fix(our_model.v_new_tech[tech].value)
+        our_model.v_new_tech[tech].fix(0)
 
     for bat in our_model.FlexibleLoad:
-        our_model.v_new_bat[bat].fix(our_model.v_new_bat[bat].value)
+        our_model.v_new_bat[bat].fix(0)
+
+
+if not case == "max_out":
+    print("🔒 Fixing Not_Supplied_Energy to 0 for in-sample run...")
+    for n in our_model.Nodes:
+        for t in our_model.Time:
+            for e in our_model.EnergyCarrier:
+                our_model.Not_Supplied_Energy[n, t, e].fix(0)
+    
+
 
 
 our_model.dual = pyo.Suffix(direction=pyo.Suffix.IMPORT) #Import dual values into solver results
@@ -942,34 +953,27 @@ opt.options["Method"] = 2  # Use the barrier method
 # === Create Results and input folder ===
 import datetime
 
-# Generate single consistent timestamp
-# Generate single consistent timestamp
+# === Create top-level results folder with unique timestamp ===
 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 run_label = f"instance{instance}_year{year}_{case}_{timestamp}"
-top_level_results_folder = f"Results_Run_{run_label}"
+top_level_results_folder = os.path.join("Results", f"Results_Run_{run_label}")
 os.makedirs(top_level_results_folder, exist_ok=True)
 
-# Use nested folders within the top-level result directory
-results_folder = os.path.join(top_level_results_folder, f"in_sample_{case}_results")
-input_data_folder = os.path.join(top_level_results_folder, f"input_data_{case}")
+# === Define subfolders for results and inputs ===
+results_folder = os.path.join(top_level_results_folder, "model_results")
+input_data_folder = os.path.join(top_level_results_folder, "input_data")
 os.makedirs(results_folder, exist_ok=True)
 os.makedirs(input_data_folder, exist_ok=True)
 
-results_folder = os.path.join(top_level_results_folder, f"in_sample_{case}_case_instance_{instance}_year_{year}")
-input_data_folder = os.path.join(top_level_results_folder, f"input_data_{case}_case_instance_{instance}_year_{year}")
-os.makedirs(results_folder, exist_ok=True)
-os.makedirs(input_data_folder, exist_ok=True)
-
-
-
-# Clean up old Gurobi log files
+# === Clean up old Gurobi logs in result folder ===
 for f in os.listdir(results_folder):
     if f.startswith("gurobi_log_") and f.endswith(".txt"):
         os.remove(os.path.join(results_folder, f))
 
-# Step 1: Set a temp log file
+# === Set Gurobi log file to temp file ===
 logfile_temp = os.path.join(results_folder, 'gurobi_log_temp.txt')
 opt.options['LogFile'] = logfile_temp
+
 print("✅ Created folders:")
 print("  Results:", os.path.exists(results_folder))
 print("  Input data:", os.path.exists(input_data_folder))
