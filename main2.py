@@ -1191,12 +1191,18 @@ print("Input folder will be:", input_data_folder)
 
 
 def write_updated_initial_parameters(model_instance, folder_path):
+    import pandas as pd
+    from pyomo.environ import value
+    import os
 
     # === Par_InitialCapacityInstalled.tab ===
     new_tech_data = [
-        {"Technology": tech, "Initial_Installed_Capacity": round(value(model_instance.v_new_tech[tech]), 6)}
+        {
+            "Technology": tech,
+            "Initial_Installed_Capacity": round(value(model_instance.v_new_tech[tech]), 6) 
+            if value(model_instance.v_new_tech[tech]) >= 0.01 else 0.0
+        }
         for tech in model_instance.Technology
-        if value(model_instance.v_new_tech[tech]) >= 0.01
     ]
     df_tech = pd.DataFrame(new_tech_data)
     tech_file = os.path.join(folder_path, "Par_InitialCapacityInstalled.tab")
@@ -1205,9 +1211,12 @@ def write_updated_initial_parameters(model_instance, folder_path):
 
     # === Par_MaxStorageCapacity.tab ===
     new_bat_data = [
-        {"FlexibleLoad": bat, "MaxStorageCapacity": round(value(model_instance.v_new_bat[bat]), 6)}
+        {
+            "FlexibleLoad": bat,
+            "MaxStorageCapacity": round(value(model_instance.v_new_bat[bat]), 6) 
+            if value(model_instance.v_new_bat[bat]) >= 0.01 else 0.0
+        }
         for bat in model_instance.FlexibleLoad
-        if value(model_instance.v_new_bat[bat]) >= 0.01
     ]
     df_bat = pd.DataFrame(new_bat_data)
     bat_file = os.path.join(folder_path, "Par_MaxStorageCapacity.tab")
@@ -1225,13 +1234,14 @@ def write_updated_initial_parameters(model_instance, folder_path):
 
     df_bat.set_index("FlexibleLoad", inplace=True)
     df_combined = df_bat.join(df_ratio, how="left")
-    df_combined["Max_charge_discharge_rate"] = df_combined["MaxStorageCapacity"] * df_combined["Power2Energy"]
+    df_combined["Max_charge_discharge_rate"] = (
+        df_combined["MaxStorageCapacity"] * df_combined["Power2Energy"]
+    ).fillna(0.0)
 
     df_output = df_combined["Max_charge_discharge_rate"].reset_index()
     max_rate_file = os.path.join(folder_path, "Par_Max_ChargeDischargeRate.tab")
     df_output.to_csv(max_rate_file, sep="\t", index=False)
     print(f"✅ Updated: {max_rate_file}")
-
 
 
 out_of_sample_folder = "Out_of_sample_test"
