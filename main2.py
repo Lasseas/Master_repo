@@ -1191,28 +1191,47 @@ print("Input folder will be:", input_data_folder)
 
 
 def write_updated_initial_parameters(model_instance, folder_path):
-    import pandas as pd
-    from pyomo.environ import value
 
-    # Write Par_InitialCapacityInstalled.tab
+    # === Par_InitialCapacityInstalled.tab ===
     new_tech_data = [
-        {"Technology": tech, "Initial_Installed_Capacity": value(model_instance.v_new_tech[tech])}
+        {"Technology": tech, "Initial_Installed_Capacity": round(value(model_instance.v_new_tech[tech]), 6)}
         for tech in model_instance.Technology
+        if value(model_instance.v_new_tech[tech]) >= 0.01
     ]
     df_tech = pd.DataFrame(new_tech_data)
     tech_file = os.path.join(folder_path, "Par_InitialCapacityInstalled.tab")
     df_tech.to_csv(tech_file, sep="\t", index=False)
     print(f"✅ Updated: {tech_file}")
 
-    # Write Par_MaxStorageCapacity.tab
+    # === Par_MaxStorageCapacity.tab ===
     new_bat_data = [
-        {"FlexibleLoad": bat, "MaxStorageCapacity": value(model_instance.v_new_bat[bat])}
+        {"FlexibleLoad": bat, "MaxStorageCapacity": round(value(model_instance.v_new_bat[bat]), 6)}
         for bat in model_instance.FlexibleLoad
+        if value(model_instance.v_new_bat[bat]) >= 0.01
     ]
     df_bat = pd.DataFrame(new_bat_data)
     bat_file = os.path.join(folder_path, "Par_MaxStorageCapacity.tab")
     df_bat.to_csv(bat_file, sep="\t", index=False)
     print(f"✅ Updated: {bat_file}")
+
+    # === Par_Max_ChargeDischargeRate.tab ===
+    ratio_file = "Par_Power2Energy_ratio.tab"
+    if not os.path.exists(ratio_file):
+        raise FileNotFoundError(f"❌ Missing required ratio file: {ratio_file}")
+
+    df_ratio = pd.read_csv(ratio_file, sep="\t")
+    df_ratio.columns = df_ratio.columns.str.strip()
+    df_ratio.set_index("FlexibleLoads", inplace=True)
+
+    df_bat.set_index("FlexibleLoad", inplace=True)
+    df_combined = df_bat.join(df_ratio, how="left")
+    df_combined["Max_charge_discharge_rate"] = df_combined["MaxStorageCapacity"] * df_combined["Power2Energy"]
+
+    df_output = df_combined["Max_charge_discharge_rate"].reset_index()
+    max_rate_file = os.path.join(folder_path, "Par_Max_ChargeDischargeRate.tab")
+    df_output.to_csv(max_rate_file, sep="\t", index=False)
+    print(f"✅ Updated: {max_rate_file}")
+
 
 
 out_of_sample_folder = "Out_of_sample_test"
