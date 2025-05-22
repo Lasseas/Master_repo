@@ -17,17 +17,24 @@ from pyomo.environ import *
 ##################################################################
 
 import argparse
+
+
 from Generate_data_files import run_everything
+
+
 parser = argparse.ArgumentParser(description="Run model instance")
-parser.add_argument("--instance", type=int, required=True, help="Instance number (e.g., 1–5)")
+#parser.add_argument("--instance", type=int, required=True, help="Instance number (e.g., 1–5)")
 parser.add_argument("--year", type=int, required=True, help="Year (e.g., 2025 or 2050)")
-parser.add_argument("--case", type=str, required=True, choices=["wide", "deep", "max"], help="Specify case type")
+parser.add_argument("--case", type=str, required=True, choices=["wide", "deep", "max_in", "max_out"], help="Specify case type")
+parser.add_argument("--cluster", type=str, required=True, choices=["random", "season", "demand"], help="Specify case type")
 args = parser.parse_args()
 
-instance = args.instance
+#instance = args.instance
+
 year = args.year
 case = args.case
-
+cluster = args.cluster
+instance = 1
 excel_path = "NO1_Pulp_Paper_2024_combined historical data_Uten_SatSun.xlsx"
 #excel_path = "NO1_Pulp_Paper_2024_combined historical data.xlsx"
 #excel_path = "NO1_Aluminum_2024_combined historical data.xlsx"
@@ -36,7 +43,8 @@ excel_path = "NO1_Pulp_Paper_2024_combined historical data_Uten_SatSun.xlsx"
 case_configs = {
     "wide": (2, 30, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
     "deep": (2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0),
-    "max":  (2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    "max_in":  (2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+    "max_out":  (2, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 }
 
 (
@@ -58,11 +66,12 @@ case_configs = {
 ) = case_configs[case]
 
 
-
-run_everything(
+if case != "max_out":
+    run_everything(
     excel_path,
     instance,
     year,
+    cluster,
     num_branches_to_firstStage,
     num_branches_to_secondStage,
     num_branches_to_thirdStage,
@@ -79,7 +88,89 @@ run_everything(
     num_branches_to_fourteenthStage,
     num_branches_to_fifteenthStage
 )
+   
+    
+def make_tab_file(filename, data_generator, chunk_size=10_000_000):
+        """
+        Writes a large dataset to a .tab file in chunks using tab as a delimiter.
 
+        Parameters:
+            filename (str): Name of the tab-separated file to save (e.g., 'output.tab').
+            data_generator (generator): A generator that yields DataFrame chunks.
+            chunk_size (int): Number of rows to process per chunk.
+        """
+        first_chunk = True  # Used to write the header only once
+
+        with open(filename, "w", newline='') as f:
+            for df_chunk in data_generator:
+                df_chunk.to_csv(f, sep = "\t", index=False, header=first_chunk, lineterminator='\n')
+                first_chunk = False
+
+        print(f"{filename} saved successfully!")
+
+cost_activity = {
+    "Power_Grid": {1: 0, 2: -1.162, 3: 2000, 4: -2000}, # 1 = Import, 2 = Export, 3 = RT_Import, 4 = RT_Export 
+    "ElectricBoiler": {1: 0, 2: 0, 3: 0}, #1 = LT, 2 = MT, 3 = Dummy
+    "HP_LT": {1: 0, 2: 0}, #1 = LT, 2 = Dummy
+    "HP_MT": {1: 0, 2: 0, 3: 0}, #1 = LT, 2 = MT, 3 = Dummy
+    "PV" : {1: 0},
+    "P2G": {1: 0},
+    "G2P": {1: 0},
+    "GasBoiler": {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}, #1 = LT (CH4 mix), 2 = MT (CH4 mix), 3 = LT (CH4), 4 = MT (CH4), 5 = LT (Biogas), 6 = MT (Biogas)
+    "GasBoiler_CCS": {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}, #1 = LT (CH4 mix), 2 = MT (CH4 mix), 3 = LT (CH4), 4 = MT (CH4), 5 = LT (Biogas), 6 = MT (Biogas)
+    "CHP": {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}, #1 = LT (CH4 mix), 2 = MT (CH4 mix), 3 = LT (CH4), 4 = MT (CH4), 5 = LT (Biogas), 6 = MT (Biogas)
+    "CHP_CCS": {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}, #1 = LT (CH4 mix), 2 = MT (CH4 mix), 3 = LT (CH4), 4 = MT (CH4), 5 = LT (Biogas), 6 = MT (Biogas)
+    "Biogas_Grid": {1: 64.5, 2: 0}, #1 = Import, 2 = Export
+    "CH4_Grid": {1: 39.479, 2: 0}, #1 = Import, 2 = Export
+    "CH4_H2_Mixer": {1: 0},
+    "DieselReserveGenerator": {1: 148.8},
+    "H2_Grid": {1: 150.1502, 2: 0}, #1 = Import, 2 = Export
+    "Dummy_Grid": {1: 0} #1 = Export
+    }
+
+#####################################################################################
+################################ Ble for stor til pushe til git ######################
+################################## må genereres i solstorm ##########################
+#####################################################################################
+
+def generate_cost_activity(num_nodes, num_timesteps, cost_activity, filename="Par_ActivityCost.tab"):
+        def data_generator(chunk_size=10_000_000):
+            rows = []
+            count = 0
+            for node in range(3, num_nodes + 1):
+                for tech, mode_costs in cost_activity.items():
+                    for mode in mode_costs:
+                        for t in range(1, num_timesteps + 1):
+                            cost = mode_costs[mode]
+                            rows.append({
+                                "Node": node,
+                                "Time": t,
+                                "Technology": tech,
+                                "Operational_mode": mode,
+                                "Cost": cost
+                            })
+                            count += 1
+                            if count % chunk_size == 0:
+                                yield pd.DataFrame(rows)
+                                rows = []
+            if rows:
+                yield pd.DataFrame(rows)
+
+        make_tab_file(filename, data_generator())
+
+if case == "max_out":
+    generate_cost_activity(num_nodes = 7812, num_timesteps = 24, cost_activity = cost_activity)
+
+
+import os
+
+# Always resolve the tab file path relative to script's location
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+if case == "max_out":
+    tab_file_folder = os.path.join(SCRIPT_DIR, "Out_of_sample_test")
+else:
+    tab_file_folder = SCRIPT_DIR
 
 
 
@@ -121,7 +212,7 @@ def read_all_sheets(excel):
         print(f"Saved file: {output_filename}")
 
 # Call the function with your Excel file
-read_all_sheets('Input_data_With_dummyGrid_and_RT.xlsx')
+#read_all_sheets('Input_data_With_dummyGrid_and_RT.xlsx')
 
 ####################################################################
 ######################### MODEL SPECIFICATIONS #####################
@@ -163,24 +254,24 @@ model.Parent_Node = pyo.Set(dimen = 2, ordered = True)
 #Reading the Sets, and loading the data
 print("Reading sets...")
 
-data.load(filename="Set_of_TimeSteps.tab", format="set", set=model.Time)
-data.load(filename="Set_of_Periods.tab", format="set", set=model.Period)
-data.load(filename="Set_of_LoadShiftingPeriod.tab", format="set", set=model.LoadShiftingPeriod)
 #data.load(filename="Set_of_TimeSteps_NO_LoadShift.tab", format = "set", set=model.Time_NO_LoadShift)
-data.load(filename="Set_of_Month.tab", format = "set", set=model.Month)
-data.load(filename="Set_of_PeriodsInMonth.tab", format = "set", set=model.PeriodInMonth)
-data.load(filename="Set_of_Technology.tab", format = "set", set=model.Technology)
-data.load(filename="Set_of_EnergyCarrier.tab", format="set", set=model.EnergyCarrier)
-data.load(filename="Set_Mode_of_Operation.tab", format = "set", set = model.Mode_of_operation)
-data.load(filename="Subset_TechToEC.tab", format="set", set=model.TechnologyToEnergyCarrier)
-data.load(filename="Subset_ECToTech.tab", format="set", set=model.EnergyCarrierToTechnology)
-data.load(filename="Set_of_FlexibleLoad.tab", format="set", set=model.FlexibleLoad)
-data.load(filename="Set_of_FlexibleLoadForEC.tab", format="set", set=model.FlexibleLoadForEnergyCarrier)
-data.load(filename="Set_of_Nodes.tab", format="set", set=model.Nodes)
-data.load(filename="Set_of_NodesInStage.tab", format="set", set=model.Nodes_in_stage)
-data.load(filename="Subset_NodesFirst.tab", format="set", set=model.Nodes_first)
-data.load(filename="Set_of_Parents.tab", format="set", set=model.Parent)
-data.load(filename="Set_ParentCoupling.tab", format = "set", set = model.Parent_Node)
+data.load(filename=os.path.join(tab_file_folder, "Set_of_TimeSteps.tab"), format="set", set=model.Time)
+data.load(filename=os.path.join(tab_file_folder, "Set_of_Periods.tab"), format="set", set=model.Period)
+data.load(filename=os.path.join(tab_file_folder, "Set_of_LoadShiftingPeriod.tab"), format="set", set=model.LoadShiftingPeriod)
+data.load(filename=os.path.join(tab_file_folder, "Set_of_Month.tab"), format="set", set=model.Month)
+data.load(filename=os.path.join(tab_file_folder, "Set_of_PeriodsInMonth.tab"), format="set", set=model.PeriodInMonth)
+data.load(filename=os.path.join(tab_file_folder, "Set_of_Technology.tab"), format="set", set=model.Technology)
+data.load(filename=os.path.join(tab_file_folder, "Set_of_EnergyCarrier.tab"), format="set", set=model.EnergyCarrier)
+data.load(filename=os.path.join(tab_file_folder, "Set_Mode_of_Operation.tab"), format="set", set=model.Mode_of_operation)
+data.load(filename=os.path.join(tab_file_folder, "Subset_TechToEC.tab"), format="set", set=model.TechnologyToEnergyCarrier)
+data.load(filename=os.path.join(tab_file_folder, "Subset_ECToTech.tab"), format="set", set=model.EnergyCarrierToTechnology)
+data.load(filename=os.path.join(tab_file_folder, "Set_of_FlexibleLoad.tab"), format="set", set=model.FlexibleLoad)
+data.load(filename=os.path.join(tab_file_folder, "Set_of_FlexibleLoadForEC.tab"), format="set", set=model.FlexibleLoadForEnergyCarrier)
+data.load(filename=os.path.join(tab_file_folder, "Set_of_Nodes.tab"), format="set", set=model.Nodes)
+data.load(filename=os.path.join(tab_file_folder, "Set_of_NodesInStage.tab"), format="set", set=model.Nodes_in_stage)
+data.load(filename=os.path.join(tab_file_folder, "Subset_NodesFirst.tab"), format="set", set=model.Nodes_first)
+data.load(filename=os.path.join(tab_file_folder, "Set_of_Parents.tab"), format="set", set=model.Parent)
+data.load(filename=os.path.join(tab_file_folder, "Set_ParentCoupling.tab"), format="set", set=model.Parent_Node)
 
 
 """
@@ -241,75 +332,78 @@ model.Res_Cap_Down_volume = pyo.Param(model.Nodes, model.Time) #Volume of total 
 print("Reading parameters...")
 
 #data.load(filename="Par_EnergyCost.tab", param=model.Cost_Energy, format = "table")
-data.load(filename="Par_ActivityCost.tab", param=model.cost_activity, format = "table")
-data.load(filename="Par_BatteryCost.tab", param=model.Cost_Battery, format = "table")
 #data.load(filename="Par_ExportCost.tab", param=model.Cost_Export, format = "table")
-data.load(filename="Par_CostExpansion_Tec.tab", param=model.Cost_Expansion_Tec, format = "table")
-data.load(filename="Par_CostExpansion_Bat.tab", param=model.Cost_Expansion_Bat, format = "table")
-if instance == 1 and year == 2025:
-    data.load(filename="Par_CostEmission_1_2025.tab", param=model.Cost_Emission, format = "table")
-elif instance == 1 and year == 2050:
-    data.load(filename="Par_CostEmission_1_2050.tab", param=model.Cost_Emission, format = "table")
-elif instance == 2 and year == 2025:
-    data.load(filename="Par_CostEmission_2_2025.tab", param=model.Cost_Emission, format = "table")
-elif instance == 2 and year == 2050:
-    data.load(filename="Par_CostEmission_2_2050.tab", param=model.Cost_Emission, format = "table")
-elif instance == 3 and year == 2025:
-    data.load(filename="Par_CostEmission_3_2025.tab", param=model.Cost_Emission, format = "table")
-elif instance == 3 and year == 2050:
-    data.load(filename="Par_CostEmission_3_2050.tab", param=model.Cost_Emission, format = "table")
-elif instance == 4 and year == 2025:
-    data.load(filename="Par_CostEmission_4_2025.tab", param=model.Cost_Emission, format = "table")
-elif instance == 4 and year == 2050:
-    data.load(filename="Par_CostEmission_4_2050.tab", param=model.Cost_Emission, format = "table")
-elif instance == 5 and year == 2025:
-    data.load(filename="Par_CostEmission_5_2025.tab", param=model.Cost_Emission, format = "table")
-elif instance == 5 and year == 2050:
-    data.load(filename="Par_CostEmission_5_2050.tab", param=model.Cost_Emission, format = "table")
-else:
-    ValueError("Invalid instance or year. Please check the values.")
 
-data.load(filename="Par_CostGridTariff.tab", param=model.Cost_Grid, format = "table")
-data.load(filename="Par_aFRR_UP_CAP_price.tab", param=model.aFRR_Up_Capacity_Price, format = "table")
-data.load(filename="Par_aFRR_DWN_CAP_price.tab", param=model.aFRR_Dwn_Capacity_Price, format = "table")
-data.load(filename="Par_aFRR_UP_ACT_price.tab", param=model.aFRR_Up_Activation_Price, format = "table")
-data.load(filename="Par_aFRR_DWN_ACT_price.tab", param=model.aFRR_Dwn_Activation_Price, format = "table")
-data.load(filename="Par_SpotPrice.tab", param=model.Spot_Price, format = "table")
-data.load(filename="Par_IntradayPrice.tab", param=model.Intraday_Price, format = "table")
-data.load(filename="Par_EnergyDemand.tab", param=model.Demand, format = "table")
-data.load(filename="Par_MaxChargeDischargeRate.tab", param=model.Max_charge_discharge_rate, format = "table")
-data.load(filename="Par_ChargeEfficiency.tab", param=model.Charge_Efficiency, format = "table")
-data.load(filename="Par_DischargeEfficiency.tab", param=model.Discharge_Efficiency, format = "table")
-data.load(filename="Par_TechToEC_Efficiency.tab", param=model.Technology_To_EnergyCarrier_Efficiency, format = "table")
-data.load(filename="Par_ECToTech_Efficiency.tab", param=model.EnergyCarrier_To_Technlogy_Efficiency, format = "table")
-data.load(filename="Par_MaxStorageCapacity.tab", param=model.Max_Storage_Capacity, format = "table")
-data.load(filename="Par_SelfDischarge.tab", param=model.Self_Discharge, format = "table")
-data.load(filename="Par_InitialSoC.tab", param=model.Initial_SOC, format = "table")
-data.load(filename="Par_NodesProbability.tab", param=model.Node_Probability, format = "table")
+# Cost Emission - update to load from correct folder
+if instance == 1 and year == 2025:
+    data.load(filename=os.path.join(tab_file_folder, "Par_CostEmission_1_2025.tab"), param=model.Cost_Emission, format = "table")
+elif instance == 1 and year == 2050:
+    data.load(filename=os.path.join(tab_file_folder, "Par_CostEmission_1_2050.tab"), param=model.Cost_Emission, format = "table")
+elif instance == 2 and year == 2025:
+    data.load(filename=os.path.join(tab_file_folder, "Par_CostEmission_2_2025.tab"), param=model.Cost_Emission, format = "table")
+elif instance == 2 and year == 2050:
+    data.load(filename=os.path.join(tab_file_folder, "Par_CostEmission_2_2050.tab"), param=model.Cost_Emission, format = "table")
+elif instance == 3 and year == 2025:
+    data.load(filename=os.path.join(tab_file_folder, "Par_CostEmission_3_2025.tab"), param=model.Cost_Emission, format = "table")
+elif instance == 3 and year == 2050:
+    data.load(filename=os.path.join(tab_file_folder, "Par_CostEmission_3_2050.tab"), param=model.Cost_Emission, format = "table")
+elif instance == 4 and year == 2025:
+    data.load(filename=os.path.join(tab_file_folder, "Par_CostEmission_4_2025.tab"), param=model.Cost_Emission, format = "table")
+elif instance == 4 and year == 2050:
+    data.load(filename=os.path.join(tab_file_folder, "Par_CostEmission_4_2050.tab"), param=model.Cost_Emission, format = "table")
+elif instance == 5 and year == 2025:
+    data.load(filename=os.path.join(tab_file_folder, "Par_CostEmission_5_2025.tab"), param=model.Cost_Emission, format = "table")
+elif instance == 5 and year == 2050:
+    data.load(filename=os.path.join(tab_file_folder, "Par_CostEmission_5_2050.tab"), param=model.Cost_Emission, format = "table")
+else:
+    raise ValueError("Invalid instance or year. Please check the values.")
+
 #data.load(filename="Par_MaxCableCapacity.tab", param=model.Max_Cable_Capacity, format = "table")
-data.load(filename="Par_MaxUpShift.tab", param=model.Up_Shift_Max, format = "table")
-data.load(filename="Par_MaxDwnShift.tab", param=model.Down_Shift_Max, format = "table")
-data.load(filename="Par_InitialCapacityInstalled.tab", param=model.Initial_Installed_Capacity, format = "table")
-data.load(filename="Par_AvailabilityFactor.tab", param=model.Availability_Factor, format = "table")
-data.load(filename="Par_CarbonIntensity.tab", param=model.Carbon_Intensity, format = "table")
-data.load(filename="Par_MaxExport.tab", param=model.Max_Export, format = "table")
-data.load(filename="Par_ActivationFactor_Up_Reg.tab", param=model.Activation_Factor_UP_Regulation, format = "table")
-data.load(filename="Par_ActivationFactor_Dwn_Reg.tab", param=model.Activation_Factor_DWN_Regulation, format = "table")
-data.load(filename="Par_ActivationFactor_ID_Up_Reg.tab", param=model.Activation_Factor_ID_Up, format = "table")
-data.load(filename="Par_ActivationFactor_ID_Dwn_Reg.tab", param=model.Activation_Factor_ID_Dwn, format = "table")
-data.load(filename="Par_AvailableExcessHeat.tab", param=model.Available_Excess_Heat, format = "table")
-data.load(filename="Par_Power2Energy_ratio.tab", param=model.Power2Energy_Ratio, format = "table")
-data.load(filename="Par_Ramping_factor.tab", param=model.Ramping_Factor, format = "table")
-data.load(filename="Par_Max_Capex_tec.tab", param=model.Max_CAPEX_tech, format = "table")
-data.load(filename="Par_Max_Capex_bat.tab", param=model.Max_CAPEX_flex, format = "table")
-data.load(filename="Par_Max_CAPEX.tab", param=model.Max_CAPEX, format = "table")
-data.load(filename="Par_Max_Carbon_Emission.tab", param=model.Max_Carbon_Emission, format = "table")
-data.load(filename="Par_LastPeriodInMonth.tab", param=model.Last_Period_In_Month, format = "table")
-data.load(filename="Par_Cost_LS.tab", param=model.Cost_LS, format = "table")
-data.load(filename="Par_ID_Capacity_Buy_Volume.tab", param=model.ID_Cap_Buy_volume, format = "table")
-data.load(filename="Par_ID_Capacity_Sell_Volume.tab", param=model.ID_Cap_Sell_volume, format = "table")
-data.load(filename="Par_Res_CapacityUpVolume.tab", param=model.Res_Cap_Up_volume, format = "table")
-data.load(filename="Par_Res_CapacityDownVolume.tab", param=model.Res_Cap_Down_volume, format = "table")
+data.load(filename=os.path.join(tab_file_folder, "Par_ActivityCost.tab"), param=model.cost_activity, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_BatteryCost.tab"), param=model.Cost_Battery, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_CostExpansion_Tec.tab"), param=model.Cost_Expansion_Tec, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_CostExpansion_Bat.tab"), param=model.Cost_Expansion_Bat, format="table")
+# Emission handled later with conditions
+data.load(filename=os.path.join(tab_file_folder, "Par_CostGridTariff.tab"), param=model.Cost_Grid, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_aFRR_UP_CAP_price.tab"), param=model.aFRR_Up_Capacity_Price, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_aFRR_DWN_CAP_price.tab"), param=model.aFRR_Dwn_Capacity_Price, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_aFRR_UP_ACT_price.tab"), param=model.aFRR_Up_Activation_Price, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_aFRR_DWN_ACT_price.tab"), param=model.aFRR_Dwn_Activation_Price, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_SpotPrice.tab"), param=model.Spot_Price, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_IntradayPrice.tab"), param=model.Intraday_Price, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_EnergyDemand.tab"), param=model.Demand, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_MaxChargeDischargeRate.tab"), param=model.Max_charge_discharge_rate, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_ChargeEfficiency.tab"), param=model.Charge_Efficiency, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_DischargeEfficiency.tab"), param=model.Discharge_Efficiency, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_TechToEC_Efficiency.tab"), param=model.Technology_To_EnergyCarrier_Efficiency, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_ECToTech_Efficiency.tab"), param=model.EnergyCarrier_To_Technlogy_Efficiency, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_MaxStorageCapacity.tab"), param=model.Max_Storage_Capacity, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_SelfDischarge.tab"), param=model.Self_Discharge, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_InitialSoC.tab"), param=model.Initial_SOC, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_NodesProbability.tab"), param=model.Node_Probability, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_MaxUpShift.tab"), param=model.Up_Shift_Max, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_MaxDwnShift.tab"), param=model.Down_Shift_Max, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_InitialCapacityInstalled.tab"), param=model.Initial_Installed_Capacity, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_AvailabilityFactor.tab"), param=model.Availability_Factor, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_CarbonIntensity.tab"), param=model.Carbon_Intensity, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_MaxExport.tab"), param=model.Max_Export, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_ActivationFactor_Up_Reg.tab"), param=model.Activation_Factor_UP_Regulation, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_ActivationFactor_Dwn_Reg.tab"), param=model.Activation_Factor_DWN_Regulation, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_ActivationFactor_ID_Up_Reg.tab"), param=model.Activation_Factor_ID_Up, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_ActivationFactor_ID_Dwn_Reg.tab"), param=model.Activation_Factor_ID_Dwn, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_AvailableExcessHeat.tab"), param=model.Available_Excess_Heat, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_Power2Energy_ratio.tab"), param=model.Power2Energy_Ratio, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_Ramping_factor.tab"), param=model.Ramping_Factor, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_Max_Capex_tec.tab"), param=model.Max_CAPEX_tech, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_Max_Capex_bat.tab"), param=model.Max_CAPEX_flex, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_Max_CAPEX.tab"), param=model.Max_CAPEX, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_Max_Carbon_Emission.tab"), param=model.Max_Carbon_Emission, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_LastPeriodInMonth.tab"), param=model.Last_Period_In_Month, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_Cost_LS.tab"), param=model.Cost_LS, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_ID_Capacity_Buy_Volume.tab"), param=model.ID_Cap_Buy_volume, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_ID_Capacity_Sell_Volume.tab"), param=model.ID_Cap_Sell_volume, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_Res_CapacityUpVolume.tab"), param=model.Res_Cap_Up_volume, format="table")
+data.load(filename=os.path.join(tab_file_folder, "Par_Res_CapacityDownVolume.tab"), param=model.Res_Cap_Down_volume, format="table")
 
 
 """
@@ -336,6 +430,7 @@ model.Up_Shift = pyo.Var(model.Nodes, model.Time, model.EnergyCarrier, domain = 
 model.Dwn_Shift = pyo.Var(model.Nodes, model.Time, model.EnergyCarrier, domain = pyo.NonNegativeReals)
 model.aggregated_Up_Shift = pyo.Var(model.Nodes, model.EnergyCarrier, domain = pyo.NonNegativeReals)
 model.aggregated_Dwn_Shift = pyo.Var(model.Nodes, model.EnergyCarrier, domain = pyo.NonNegativeReals)
+model.Not_Supplied_Energy = pyo.Var(model.Nodes, model.Time, model.EnergyCarrier, domain = pyo.NonNegativeReals)
 model.I_inv = pyo.Var()
 model.I_GT = pyo.Var()
 model.I_cap_bid = pyo.Var(model.Time)
@@ -438,7 +533,7 @@ def cost_opex(model, n, s, t):
             ) 
             - sum(model.cost_activity[n, t, i, o] * model.y_activity[n, t, i, o] for (i, e, o) in model.EnergyCarrierToTechnology)
             + sum(model.Cost_Battery[b] * model.q_discharge[n, t, b] for b in model.FlexibleLoad)
-            + sum(model.Cost_LS[e]*model.Dwn_Shift[n, t, e] for e in model.EnergyCarrier)
+            + sum(model.Cost_LS[e]*model.Dwn_Shift[n, t, e] + 10_000 * model.Not_Supplied_Energy[n, t, e] for e in model.EnergyCarrier)
     )
 model.OPEXCost = pyo.Constraint(model.Nodes_in_stage, model.Time, rule=cost_opex)
 
@@ -461,7 +556,7 @@ def energy_balance(model, n, s, t, e):
 model.EnergyBalance = pyo.Constraint(model.Nodes_in_stage, model.Time, model.EnergyCarrier, rule=energy_balance)
 
 def Defining_flexible_demand(model, n, s, t, e):
-    return model.d_flex[n, t, e] == model.Demand[n, t, e] + model.Up_Shift[n, t, e] - model.Dwn_Shift[n, t, e]
+    return model.d_flex[n, t, e] == model.Demand[n, t, e] + model.Up_Shift[n, t, e] - model.Dwn_Shift[n, t, e] - model.Not_Supplied_Energy[n, t, e]
 model.DefiningFlexibleDemand = pyo.Constraint(model.Nodes_in_stage, model.Time, model.EnergyCarrier, rule = Defining_flexible_demand)
 
 #####################################################################################
@@ -807,7 +902,28 @@ MATCHING DATA FROM CASE WITH MATHEMATICAL MODEL AND PRINTING DATA
 """
 print("Building instance...")
 
-our_model = model.create_instance(data)   
+our_model = model.create_instance(data)  
+
+if case == "max_out":
+    print("🔒 Fixing v_new_tech and v_new_bat to 0 for out-of-sample run...")
+
+    for tech in our_model.Technology:
+        our_model.v_new_tech[tech].fix(0)
+
+    for bat in our_model.FlexibleLoad:
+        our_model.v_new_bat[bat].fix(0)
+
+
+if case != "max_out":
+    print("🔒 Fixing Not_Supplied_Energy to 0 for in-sample run...")
+    for n in our_model.Nodes:
+        for t in our_model.Time:
+            for e in our_model.EnergyCarrier:
+                our_model.Not_Supplied_Energy[n, t, e].fix(0)
+    
+
+
+
 our_model.dual = pyo.Suffix(direction=pyo.Suffix.IMPORT) #Import dual values into solver results
 #import pdb; pdb.set_trace()
 
@@ -837,31 +953,62 @@ opt.options["Method"] = 2  # Use the barrier method
 # === Create Results and input folder ===
 import datetime
 
-# Generate single consistent timestamp
+
+# Generate timestamp and run label
 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+run_label = f"{case}_cluster{cluster}_year{year}_{timestamp}"
+top_level_results_folder = os.path.join("Results", f"Results_Run_{run_label}")
+os.makedirs(top_level_results_folder, exist_ok=True)
 
-# Clean filename-safe Excel name
-safe_excel_path = os.path.splitext(os.path.basename(excel_path))[0].replace(" ", "_").replace("-", "_")
+# Define in-sample and out-of-sample result subfolders
+in_sample_folder = os.path.join(top_level_results_folder, "In_sample_results")
+out_of_sample_folder = os.path.join(top_level_results_folder, "Out_of_sample_results")
+input_data_folder = os.path.join(top_level_results_folder, "input_data")
 
-# Create unique folder names
-results_folder = f"Results/Results_{case}_case_instance_{instance}_year_{year}_time_{timestamp}"
-input_data_folder = f"Input_data/Input_{case}_case_instance_{instance}_year_{year}_time_{timestamp}"
-
-# Create the folders
-os.makedirs(results_folder, exist_ok=True)
+os.makedirs(in_sample_folder, exist_ok=True)
+os.makedirs(out_of_sample_folder, exist_ok=True)
 os.makedirs(input_data_folder, exist_ok=True)
 
-
-# Clean up old Gurobi log files
-for f in os.listdir(results_folder):
+# Clean up old Gurobi logs in result folder
+for f in os.listdir(in_sample_folder):
     if f.startswith("gurobi_log_") and f.endswith(".txt"):
-        os.remove(os.path.join(results_folder, f))
+        os.remove(os.path.join(in_sample_folder, f))
 
-# Step 1: Set a temp log file
-logfile_temp = os.path.join(results_folder, 'gurobi_log_temp.txt')
+# Set Gurobi log file to temp file
+logfile_temp = os.path.join(in_sample_folder, 'gurobi_log_temp.txt')
 opt.options['LogFile'] = logfile_temp
+
 print("✅ Created folders:")
-print("  Results:", os.path.exists(results_folder))
+print("  In-sample Results:", os.path.exists(in_sample_folder))
+print("  Out-of-sample Results:", os.path.exists(out_of_sample_folder))
+print("  Input data:", os.path.exists(input_data_folder))
+# Generate timestamp and run label
+timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+run_label = f"{case}_cluster{cluster}_year{year}_{timestamp}"
+top_level_results_folder = os.path.join("Results", f"Results_Run_{run_label}")
+os.makedirs(top_level_results_folder, exist_ok=True)
+
+# Define in-sample and out-of-sample result subfolders
+in_sample_folder = os.path.join(top_level_results_folder, "In_sample_results")
+out_of_sample_folder = os.path.join(top_level_results_folder, "Out_of_sample_results")
+input_data_folder = os.path.join(top_level_results_folder, "input_data")
+
+os.makedirs(in_sample_folder, exist_ok=True)
+os.makedirs(out_of_sample_folder, exist_ok=True)
+os.makedirs(input_data_folder, exist_ok=True)
+
+# Clean up old Gurobi logs in result folder
+for f in os.listdir(in_sample_folder):
+    if f.startswith("gurobi_log_") and f.endswith(".txt"):
+        os.remove(os.path.join(in_sample_folder, f))
+
+# Set Gurobi log file to temp file
+logfile_temp = os.path.join(in_sample_folder, 'gurobi_log_temp.txt')
+opt.options['LogFile'] = logfile_temp
+
+print("✅ Created folders:")
+print("  In-sample Results:", os.path.exists(in_sample_folder))
+print("  Out-of-sample Results:", os.path.exists(out_of_sample_folder))
 print("  Input data:", os.path.exists(input_data_folder))
 
 
@@ -877,10 +1024,16 @@ results = opt.solve(our_model, tee=True)
 end_time = time.time()
 running_time = end_time - start_time
 
-# Step 3: Rename the Gurobi log file
+# Rename Gurobi log file with run label
 runtime_str = f"{running_time:.2f}s".replace('.', '_')
-final_logfile = os.path.join(results_folder, f"gurobi_log_{timestamp}_{runtime_str}.txt")
+
+# Usage after solving the model
+# Choose correct result folder based on case
+result_target_folder = out_of_sample_folder if case == "max_out" else in_sample_folder
+#
+final_logfile = os.path.join(result_target_folder, f"gurobi_log_{run_label}_{runtime_str}.txt")
 os.rename(logfile_temp, final_logfile)
+
 
 # Optional: Append Python timing info at the bottom
 with open(final_logfile, 'a') as f:
@@ -897,8 +1050,6 @@ simplex_iterations = solver_stats.statistics.number_of_iterations if hasattr(sol
 """
 DISPLAY RESULTS??
 """
-print("Writing results to .csv...")
-
 #our_model.display('results.csv')
 #our_model.dual.display()
 print("-" * 70)
@@ -925,9 +1076,9 @@ Total Solving Time (end time - start time): {running_time:.2f} seconds
 Simplex Iterations: {simplex_iterations}
 """
 
-with open(os.path.join(results_folder, "runtime_log.txt"), "w") as f:
+runtime_txt_filename = f"runtime_log_{run_label}.txt"
+with open(os.path.join(result_target_folder, runtime_txt_filename), "w") as f:
     f.write(runtime_log)
-
 
 
 """
@@ -936,11 +1087,12 @@ EXTRACT VALUE OF VARIABLES AND WRITE THEM INTO EXCEL FILE
 
 print("Writing results to .xlsx...")
 
-def save_results_to_excel(model_instance, instance, year, timestamp, max_rows_per_sheet=1_000_000):
+def save_results_to_excel(model_instance, run_label, max_rows_per_sheet=1_000_000):
     import pandas as pd
     from pyomo.environ import value
 
-    filename = f"Variable_Results_instance{instance}_year{year}_time{timestamp}.xlsx"
+    filename = f"Variable_Results_{run_label}.xlsx"
+
 
     # Ensure xlsxwriter is available
     try:
@@ -986,12 +1138,9 @@ def save_results_to_excel(model_instance, instance, year, timestamp, max_rows_pe
     print(f"Variable results saved to {filename}")
     return filename
 
-
-# Usage after solving the model
-excel_filename = save_results_to_excel(our_model, instance, year, timestamp)
-shutil.move(excel_filename, os.path.join(results_folder, excel_filename))
-
-#save_results_to_excel(our_model, filename=os.path.join(results_folder, "Variable_Results.xlsx"))
+# === Write Excel results ===
+excel_filename = save_results_to_excel(our_model, run_label)
+shutil.move(excel_filename, os.path.join(result_target_folder, excel_filename))
 
 
 # === Write case and objective summary ===
@@ -1038,8 +1187,9 @@ num_scenarios = max(cumulative) if cumulative else 1
 case_and_objective_content = f"""Case and Objective Summary
 -----------------------------
 Excel path: {excel_path}
-instance: {instance}
 year: {year}
+cluster: {cluster}
+case: {case}
 
 Number of branches per stage:
 - Stage 1: {num_branches_to_firstStage}
@@ -1063,16 +1213,118 @@ Number of Nodes: {num_Nodes}
 Objective Value: {objective_value:.2f}
 """
 
-# Save it to the Results folder
-with open(os.path.join(results_folder, "case_and_objective_info.txt"), "w") as f:
+case_and_objective_path = os.path.join(result_target_folder, f"case_and_objective_info_{'out' if case == 'max_out' else 'in'}.txt")
+with open(case_and_objective_path, "w") as f:
     f.write(case_and_objective_content)
+
+print("Working directory:", os.getcwd())
+print("Results folder will be:", result_target_folder)
+print("Input folder will be:", input_data_folder)
+
 
 
 
 
 print("Working directory:", os.getcwd())
-print("Results folder will be:", results_folder)
+print("Results folder will be:", in_sample_folder)
 print("Input folder will be:", input_data_folder)
+
+
+
+
+
+# === Write case/cluster summary ===
+case_and_objective_path = os.path.join(result_target_folder, f"case_and_objective_info_{'out' if case == 'max_out' else 'in'}.txt")
+with open(case_and_objective_path, "w") as f:
+    f.write(case_and_objective_content)
+
+
+#save_results_to_excel(our_model, filename=os.path.join(results_folder, "Variable_Results.xlsx"))
+
+
+def write_updated_initial_parameters(model_instance, folder_path):
+    import pandas as pd
+    from pyomo.environ import value
+    import os
+
+    # === Default capacities for predefined grid technologies ===
+    default_capacities = {
+        "Power_Grid": 2000,
+        "Biogas_Grid": 1000,
+        "CH4_Grid": 1000,
+        "H2_Grid": 1000,
+        "Dummy_Grid": 1000,
+    }
+
+    # === Par_InitialCapacityInstalled.tab ===
+    new_tech_data = []
+    for tech in model_instance.Technology:
+        v_new = value(model_instance.v_new_tech[tech])
+        base = default_capacities.get(tech, 0)
+        cap = round(v_new, 6) if v_new >= 0.01 else 0.0
+        total_cap = cap + base
+        new_tech_data.append({
+            "Technology": tech,
+            "Initial_Installed_Capacity": total_cap
+        })
+
+    df_tech = pd.DataFrame(new_tech_data)
+    tech_file = os.path.join(folder_path, "Par_InitialCapacityInstalled.tab")
+    df_tech.to_csv(tech_file, sep="\t", index=False)
+    print(f"✅ Updated: {tech_file}")
+
+    # === Par_MaxStorageCapacity.tab ===
+    new_bat_data = [
+        {
+            "FlexibleLoad": bat,
+            "MaxStorageCapacity": round(value(model_instance.v_new_bat[bat]), 6) 
+            if value(model_instance.v_new_bat[bat]) >= 0.01 else 0.0
+        }
+        for bat in model_instance.FlexibleLoad
+    ]
+    df_bat = pd.DataFrame(new_bat_data)
+    bat_file = os.path.join(folder_path, "Par_MaxStorageCapacity.tab")
+    df_bat.to_csv(bat_file, sep="\t", index=False)
+    print(f"✅ Updated: {bat_file}")
+
+    # === Par_Max_ChargeDischargeRate.tab ===
+    ratio_file = "Par_Power2Energy_ratio.tab"
+    if not os.path.exists(ratio_file):
+        raise FileNotFoundError(f"❌ Missing required ratio file: {ratio_file}")
+
+    df_ratio = pd.read_csv(ratio_file, sep="\t")
+    df_ratio.columns = df_ratio.columns.str.strip()
+    df_ratio.set_index("FlexibleLoads", inplace=True)
+
+    df_bat.set_index("FlexibleLoad", inplace=True)
+    df_combined = df_bat.join(df_ratio, how="left")
+    df_combined["Max_charge_discharge_rate"] = (
+        df_combined["MaxStorageCapacity"] * df_combined["Power2Energy"]
+    ).fillna(0.0)
+
+    df_output = df_combined["Max_charge_discharge_rate"].reset_index()
+    max_rate_file = os.path.join(folder_path, "Par_MaxChargeDischargeRate.tab")
+    df_output.to_csv(max_rate_file, sep="\t", index=False)
+    print(f"✅ Updated: {max_rate_file}")
+
+
+
+out_of_sample_folder = "Out_of_sample_test"
+write_updated_initial_parameters(our_model, out_of_sample_folder)
+
+if case in ["wide", "deep", "max_in"]:
+    print("\n➡️  Running out-of-sample test for 'max_out' case...\n")
+
+    # 1. Update parameter files using v_new_tech and v_new_bat
+    write_updated_initial_parameters(our_model, out_of_sample_folder)
+    
+
+    # 2. Solve max-case using only files in Out_of_sample_test/
+    os.chdir("Out_of_sample_test")
+    os.system(f"python ../main.py --year 2025 --case max_out --cluster season")
+    os.chdir("..")
+
+
 
 """
 PLOT RESULTS
