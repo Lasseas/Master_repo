@@ -44,7 +44,7 @@ case_configs = {
     "wide": (2, 30, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
     "deep": (2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0),
     "max_in":  (2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-    "max_out":  (2, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    "max_out":  (2, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 }
 
 (
@@ -158,7 +158,8 @@ def generate_cost_activity(num_nodes, num_timesteps, cost_activity, filename="Pa
 
         make_tab_file(filename, data_generator())
 
-generate_cost_activity(num_nodes = 7812, num_timesteps = 24, cost_activity = cost_activity)
+if case == "max_out":
+    generate_cost_activity(num_nodes = 7812, num_timesteps = 24, cost_activity = cost_activity)
 
 
 import os
