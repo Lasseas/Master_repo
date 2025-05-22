@@ -1146,7 +1146,7 @@ if case in ["wide", "deep", "max_in"]:
 
     # 2. Solve max-case using only files in Out_of_sample_test/
     os.chdir("Out_of_sample_test")
-    os.system(f"python ../main.py --year 2025 --case max_out --cluster season")
+    os.system(f"python ../main2.py --year 2025 --case max_out --cluster season")
     os.chdir("..")
 
 
