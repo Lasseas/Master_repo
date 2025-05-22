@@ -89,12 +89,16 @@ if case != "max_out":
     num_branches_to_fifteenthStage
 )
 
+import os
 
-# Step 0: Define the base folder for .tab files
+# Always resolve the tab file path relative to script's location
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 if case == "max_out":
-    tab_file_folder = "Out_of_sample_test"
+    tab_file_folder = os.path.join(SCRIPT_DIR, "Out_of_sample_test")
 else:
-    tab_file_folder = "."
+    tab_file_folder = SCRIPT_DIR
+
 
 
 #####################################################################################
