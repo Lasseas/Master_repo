@@ -88,6 +88,78 @@ if case != "max_out":
     num_branches_to_fourteenthStage,
     num_branches_to_fifteenthStage
 )
+    
+    
+def make_tab_file(filename, data_generator, chunk_size=10_000_000):
+        """
+        Writes a large dataset to a .tab file in chunks using tab as a delimiter.
+
+        Parameters:
+            filename (str): Name of the tab-separated file to save (e.g., 'output.tab').
+            data_generator (generator): A generator that yields DataFrame chunks.
+            chunk_size (int): Number of rows to process per chunk.
+        """
+        first_chunk = True  # Used to write the header only once
+
+        with open(filename, "w", newline='') as f:
+            for df_chunk in data_generator:
+                df_chunk.to_csv(f, sep = "\t", index=False, header=first_chunk, lineterminator='\n')
+                first_chunk = False
+
+        print(f"{filename} saved successfully!")
+
+cost_activity = {
+    "Power_Grid": {1: 0, 2: -1.162, 3: 2000, 4: -2000}, # 1 = Import, 2 = Export, 3 = RT_Import, 4 = RT_Export 
+    "ElectricBoiler": {1: 0, 2: 0, 3: 0}, #1 = LT, 2 = MT, 3 = Dummy
+    "HP_LT": {1: 0, 2: 0}, #1 = LT, 2 = Dummy
+    "HP_MT": {1: 0, 2: 0, 3: 0}, #1 = LT, 2 = MT, 3 = Dummy
+    "PV" : {1: 0},
+    "P2G": {1: 0},
+    "G2P": {1: 0},
+    "GasBoiler": {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}, #1 = LT (CH4 mix), 2 = MT (CH4 mix), 3 = LT (CH4), 4 = MT (CH4), 5 = LT (Biogas), 6 = MT (Biogas)
+    "GasBoiler_CCS": {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}, #1 = LT (CH4 mix), 2 = MT (CH4 mix), 3 = LT (CH4), 4 = MT (CH4), 5 = LT (Biogas), 6 = MT (Biogas)
+    "CHP": {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}, #1 = LT (CH4 mix), 2 = MT (CH4 mix), 3 = LT (CH4), 4 = MT (CH4), 5 = LT (Biogas), 6 = MT (Biogas)
+    "CHP_CCS": {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}, #1 = LT (CH4 mix), 2 = MT (CH4 mix), 3 = LT (CH4), 4 = MT (CH4), 5 = LT (Biogas), 6 = MT (Biogas)
+    "Biogas_Grid": {1: 64.5, 2: 0}, #1 = Import, 2 = Export
+    "CH4_Grid": {1: 39.479, 2: 0}, #1 = Import, 2 = Export
+    "CH4_H2_Mixer": {1: 0},
+    "DieselReserveGenerator": {1: 148.8},
+    "H2_Grid": {1: 150.1502, 2: 0}, #1 = Import, 2 = Export
+    "Dummy_Grid": {1: 0} #1 = Export
+    }
+
+#####################################################################################
+################################ Ble for stor til pushe til git ######################
+################################## må genereres i solstorm ##########################
+#####################################################################################
+
+def generate_cost_activity(num_nodes, num_timesteps, cost_activity, filename="Par_ActivityCost.tab"):
+        def data_generator(chunk_size=10_000_000):
+            rows = []
+            count = 0
+            for node in range(3, num_nodes + 1):
+                for tech, mode_costs in cost_activity.items():
+                    for mode in mode_costs:
+                        for t in range(1, num_timesteps + 1):
+                            cost = mode_costs[mode]
+                            rows.append({
+                                "Node": node,
+                                "Time": t,
+                                "Technology": tech,
+                                "Operational_mode": mode,
+                                "Cost": cost
+                            })
+                            count += 1
+                            if count % chunk_size == 0:
+                                yield pd.DataFrame(rows)
+                                rows = []
+            if rows:
+                yield pd.DataFrame(rows)
+
+        make_tab_file(filename, data_generator())
+
+generate_cost_activity(num_nodes = 7812, num_timesteps = 24, cost_activity = cost_activity)
+
 
 import os
 
