@@ -28,7 +28,7 @@ parser = argparse.ArgumentParser(description="Run model instance")
 parser.add_argument("--year", type=int, required=True, help="Year (e.g., 2025 or 2050)")
 parser.add_argument("--case", type=str, required=True, choices=["wide", "deep", "max_in", "max_out", "git_push"], help="Specify case type")
 parser.add_argument("--cluster", type=str, required=True, choices=["random", "season", "demand"], help="Specify case type")
-parser.add_argument("--file", type=str, required=True, help="Path to the Result file")
+#parser.add_argument("--file", type=str, required=True, help="Path to the Result file")
 args = parser.parse_args()
 
 #instance = args.instance
@@ -36,7 +36,7 @@ args = parser.parse_args()
 year = args.year
 case = args.case
 cluster = args.cluster
-filenumber = args.file
+#filenumber = args.file
 instance = 1
 excel_path = "NO1_Pulp_Paper_2024_combined historical data_Uten_SatSun.xlsx"
 #excel_path = "NO1_Pulp_Paper_2024_combined historical data.xlsx"
@@ -971,13 +971,36 @@ timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 run_label = f"case_{case}_cluster_{cluster}_year_{year}_{timestamp}"
 
 
-
 # Use the script’s location as base_dir.
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
-# Revert to a single results folder using run_label (or filenumber as before)
-result_folder = os.path.join(base_dir, "Results", f"Results_{filenumber}")
+# For both in-sample and out-of-sample runs, the in-sample results folder is based on filenumber.
+anchor_folder = os.path.join(base_dir, "Results")
 
+# In in-sample run, create a new run_label and store it.
+if case != "max_out":
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    run_label = f"case_{case}_cluster_{cluster}_year_{year}_{timestamp}"
+    # Build the final results folder name using run_label
+    result_folder = os.path.join(base_dir, "Results", f"Result_{run_label}")
+    os.makedirs(result_folder, exist_ok=True)
+    # Also ensure the anchor folder exists and then store the run_label for future reference:
+    os.makedirs(anchor_folder, exist_ok=True)
+    with open(os.path.join(anchor_folder, "in_sample_run_label.txt"), "w") as f:
+        f.write(run_label)
+else:
+    # Out-of-sample run: read the in-sample run_label from the anchor folder.
+    run_label_file = os.path.join(anchor_folder, "in_sample_run_label.txt")
+    try:
+        with open(run_label_file, "r") as f:
+            run_label = f.readline().strip()
+    except FileNotFoundError:
+        # Fallback if the file isn't found.
+        run_label = f"case_{case}_cluster_{cluster}_year_{year}_default"
+    result_folder = os.path.join(base_dir, "Results", f"Result_{run_label}")
+    os.makedirs(result_folder, exist_ok=True)
+
+# Create a subfolder for input data if needed.
 input_data_folder = os.path.join(result_folder, "input_data")
 os.makedirs(input_data_folder, exist_ok=True)
 
