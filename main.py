@@ -160,7 +160,7 @@ def generate_cost_activity(num_nodes, num_timesteps, cost_activity, filename="Pa
         make_tab_file(filename, data_generator())
 
 if case == "max_out":
-    generate_cost_activity(num_nodes = 7812, num_timesteps = 24, cost_activity = cost_activity)
+    generate_cost_activity(num_nodes = 14, num_timesteps = 24, cost_activity = cost_activity)
 
 
 import os
