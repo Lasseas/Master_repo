@@ -1092,7 +1092,7 @@ def save_results_to_excel(model_instance, run_label, target_folder, max_rows_per
 
     with pd.ExcelWriter(full_path, engine="xlsxwriter") as writer:
         for var in model_instance.component_objects(pyo.Var, active=True):
-            if var.name not in ["v_new_tech", "v_new_bat", "Not_Supplied_Energy"]:
+            if var.name not in ["v_new_tech", "v_new_bat", "Not_Supplied_Energy", "y_activity"]:
                 continue
             var_name = var.name
             var_data = []
