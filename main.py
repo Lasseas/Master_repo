@@ -960,6 +960,7 @@ import os
 import datetime
 
 # === Generate or load shared run label ===
+# Only create a new run_label if it's not a max_out case
 run_label_file = os.path.join("Out_of_sample_test", "used_run_label.txt")
 
 if case != "max_out":
@@ -969,19 +970,33 @@ if case != "max_out":
         f.write(run_label)
 else:
     if not os.path.exists(run_label_file):
-        raise FileNotFoundError("❌ Could not find used_run_label.txt. Run an in-sample case first.")
+        raise FileNotFoundError("❌ No in-sample run_label found. Run an in-sample case first.")
     with open(run_label_file, "r") as f:
         run_label = f.read().strip()
 
-# === Create folder structure ===
+
+"""
+timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+run_label = f"{case}_cluster{cluster}_year{year}_{timestamp}"
+
 top_level_results_folder = os.path.join("Results", f"Results_Run_{run_label}")
 in_sample_folder = os.path.join(top_level_results_folder, "In_sample_results")
 out_of_sample_folder = os.path.join(top_level_results_folder, "Out_of_sample_results")
 input_data_folder = os.path.join(top_level_results_folder, "input_data")
+"""
+# Only one top-level folder — always based on run_label
+top_level_results_folder = os.path.join("Results", f"Results_Run_{run_label}")
 
+# Subfolders inside it
+in_sample_folder = os.path.join(top_level_results_folder, "In_sample_results")
+out_of_sample_folder = os.path.join(top_level_results_folder, "Out_of_sample_results")
+input_data_folder = os.path.join(top_level_results_folder, "input_data")
+
+# Create only if they don’t exist
 os.makedirs(in_sample_folder, exist_ok=True)
 os.makedirs(out_of_sample_folder, exist_ok=True)
 os.makedirs(input_data_folder, exist_ok=True)
+
 
 # === Clean up old Gurobi logs ===
 for f in os.listdir(in_sample_folder):
