@@ -18,7 +18,11 @@ from pyomo.environ import *
 ##################################################################
 
 import argparse
-
+import os
+if "REPO_ROOT" in os.environ:
+    base_dir = os.environ["REPO_ROOT"]
+else:
+    base_dir = os.path.dirname(os.path.abspath(__file__))
 
 from Generate_data_files import run_everything
 
@@ -1413,6 +1417,8 @@ if case in ["wide", "deep", "max_in", "git_push"]:
     out_sample_folder = os.path.join(base_dir, "Out_of_sample_test")
     write_updated_initial_parameters(our_model, out_sample_folder)
     
+    repo_root = os.path.dirname(os.path.abspath(__file__))
+    os.environ["REPO_ROOT"] = repo_root
     import subprocess
     main_abs = os.path.join(base_dir, "main.py")
     subprocess.run(
