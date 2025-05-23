@@ -1152,6 +1152,21 @@ shutil.move(excel_filename, os.path.join(result_target_folder, excel_filename))
 # Get the objective value
 objective_value = pyo.value(our_model.Objective)
 num_Nodes = len(our_model.Nodes) if hasattr(our_model, "Nodes") else "Unknown"
+num_days = len(our_model.Period)
+objective_scaled_to_year = (objective_value / num_days) * 365
+investment_cost = pyo.value(our_model.I_inv)
+investment_cost_scaled_to_year = (investment_cost/num_days) * 365
+loadShedding_cost = pyo.value(our_model.I_loadShedding)
+loadShedding_cost_scaled_to_year = (investment_cost/num_days) * 365
+
+if case != "max_out":
+    investment_cost_for_out_of_sample = (pyo.value(our_model.I_inv) / num_days) * 5
+    investment_cost_scaled_to_year_for_out_of_sample = (investment_cost_for_out_of_sample / 5) * 365
+
+    # Save to file
+    with open(os.path.join(out_of_sample_folder, "in_sample_investment_cost.txt"), "w") as f:
+        f.write(f"{investment_cost_for_out_of_sample},{investment_cost_scaled_to_year_for_out_of_sample}")
+
 
 # List of your branch counts
 branches = [
@@ -1186,36 +1201,81 @@ num_scenarios = max(cumulative) if cumulative else 1
 
 #print("Number of scenarios:", num_scenarios)
 
+if case == "max_out":
+    
+    # Create contents
+    case_and_objective_content = f"""Case and Objective Summary (Out-Of-Sample test)
+    -----------------------------
+    Excel path: {excel_path}
+    year: {year}
+    cluster: {cluster}
+    case: {case}
 
-# Create contents
-case_and_objective_content = f"""Case and Objective Summary
------------------------------
-Excel path: {excel_path}
-year: {year}
-cluster: {cluster}
-case: {case}
+    Number of branches per stage:
+    - Stage 1: {num_branches_to_firstStage}
+    - Stage 2: {num_branches_to_secondStage}
+    - Stage 3: {num_branches_to_thirdStage}
+    - Stage 4: {num_branches_to_fourthStage}
+    - Stage 5: {num_branches_to_fifthStage}
+    - Stage 6: {num_branches_to_sixthStage}
+    - Stage 7: {num_branches_to_seventhStage}
+    - Stage 8: {num_branches_to_eighthStage}
+    - Stage 9: {num_branches_to_ninthStage}
+    - Stage 10: {num_branches_to_tenthStage}
+    - Stage 11: {num_branches_to_eleventhStage}
+    - Stage 12: {num_branches_to_twelfthStage}
+    - Stage 13: {num_branches_to_thirteenthStage}
+    - Stage 14: {num_branches_to_fourteenthStage}
+    - Stage 15: {num_branches_to_fifteenthStage}
 
-Number of branches per stage:
-- Stage 1: {num_branches_to_firstStage}
-- Stage 2: {num_branches_to_secondStage}
-- Stage 3: {num_branches_to_thirdStage}
-- Stage 4: {num_branches_to_fourthStage}
-- Stage 5: {num_branches_to_fifthStage}
-- Stage 6: {num_branches_to_sixthStage}
-- Stage 7: {num_branches_to_seventhStage}
-- Stage 8: {num_branches_to_eighthStage}
-- Stage 9: {num_branches_to_ninthStage}
-- Stage 10: {num_branches_to_tenthStage}
-- Stage 11: {num_branches_to_eleventhStage}
-- Stage 12: {num_branches_to_twelfthStage}
-- Stage 13: {num_branches_to_thirteenthStage}
-- Stage 14: {num_branches_to_fourteenthStage}
-- Stage 15: {num_branches_to_fifteenthStage}
+    Number of Scenarios: {num_scenarios}
+    Number of Nodes: {num_Nodes}
+    Objective Value: {objective_value:.2f}
+    Objective Value incl. investment cost:{objective_value + investment_cost_for_out_of_sample:.2f}
+    Costs related to load shedding: {loadShedding_cost:.2f}
+    ----------------------------------------------------
+    SCALED TO YEARLY COSTS:
+    ----------------------------------------------------
+    Objective Value (scaled to yearly cost): {objective_scaled_to_year:.2f}
+    Objective value incl. investment cost (scaled to yearly cost):{objective_scaled_to_year + investment_cost_scaled_to_year_for_out_of_sample:.2f}
+    Load shedding cost (scaled to yearly cost): {loadShedding_cost_scaled_to_year:.2f}
+    """
+else: 
+    # Create contents
+    case_and_objective_content = f"""Case and Objective Summary (In-Sample test)
+    -----------------------------
+    Excel path: {excel_path}
+    year: {year}
+    cluster: {cluster}
+    case: {case}
 
-Number of Scenarios: {num_scenarios}
-Number of Nodes: {num_Nodes}
-Objective Value: {objective_value:.2f}
-"""
+    Number of branches per stage:
+    - Stage 1: {num_branches_to_firstStage}
+    - Stage 2: {num_branches_to_secondStage}
+    - Stage 3: {num_branches_to_thirdStage}
+    - Stage 4: {num_branches_to_fourthStage}
+    - Stage 5: {num_branches_to_fifthStage}
+    - Stage 6: {num_branches_to_sixthStage}
+    - Stage 7: {num_branches_to_seventhStage}
+    - Stage 8: {num_branches_to_eighthStage}
+    - Stage 9: {num_branches_to_ninthStage}
+    - Stage 10: {num_branches_to_tenthStage}
+    - Stage 11: {num_branches_to_eleventhStage}
+    - Stage 12: {num_branches_to_twelfthStage}
+    - Stage 13: {num_branches_to_thirteenthStage}
+    - Stage 14: {num_branches_to_fourteenthStage}
+    - Stage 15: {num_branches_to_fifteenthStage}
+
+    Number of Scenarios: {num_scenarios}
+    Number of Nodes: {num_Nodes}
+    Objective Value: {objective_value:.2f}
+    Investment Cost (tech+bat): {investment_cost:.2f}
+    ----------------------------------------------------
+    SCALED TO YEARLY COSTS:
+    ----------------------------------------------------
+    Objective Value (scaled to yearly cost): {objective_scaled_to_year:.2f}
+    Investment Cost (scaled to yearly cost): {investment_cost_scaled_to_year:.2f}
+    """
 
 case_and_objective_path = os.path.join(result_target_folder, f"case_and_objective_info_{'out' if case == 'max_out' else 'in'}.txt")
 with open(case_and_objective_path, "w") as f:
@@ -1313,7 +1373,7 @@ def write_updated_initial_parameters(model_instance, folder_path):
 
 
 
-out_of_sample_folder = "Out_of_sample_results"
+#out_of_sample_folder = "Out_of_sample_results"
 write_updated_initial_parameters(our_model, out_of_sample_folder)
 
 if case in ["wide", "deep", "max_in"]:

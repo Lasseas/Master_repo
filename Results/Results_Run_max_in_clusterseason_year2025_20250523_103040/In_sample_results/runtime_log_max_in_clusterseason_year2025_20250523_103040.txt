@@ -1,0 +1,5 @@
+Solver Runtime Log
+--------------------
+Total Solving Time (end time - start time): 2.99 seconds
+
+Simplex Iterations: Unavailable
