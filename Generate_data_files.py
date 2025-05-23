@@ -728,7 +728,7 @@ def run_everything(excel_path, instance, year, cluster, num_branches_to_firstSta
         "Biogas_Grid": 0.9,
         "CH4_Grid": 0.8,
         "CH4_H2_Mixer": 1.0,
-        "DieselReserve_Generator": 0.98,
+        "DieselReserveGenerator": 0.98,
         "H2_Grid": 0.8,
         "Dummy_Grid": 1.0,
     }

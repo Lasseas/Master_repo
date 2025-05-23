@@ -1167,7 +1167,18 @@ if case != "max_out":
     with open(os.path.join(out_of_sample_folder, "in_sample_investment_cost.txt"), "w") as f:
         f.write(f"{investment_cost_for_out_of_sample},{investment_cost_scaled_to_year_for_out_of_sample}")
 
+if case == "max_out":
+    # Load the in-sample investment cost from file
+    try:
+        with open(os.path.join(out_of_sample_folder, "in_sample_investment_cost.txt"), "r") as f:
+            line = f.readline().strip()
+            investment_cost_for_out_of_sample, investment_cost_scaled_to_year_for_out_of_sample = map(float, line.split(","))
+    except FileNotFoundError:
+        print("⚠️ Warning: Could not find in_sample_investment_cost.txt. Defaulting investment cost to 0.")
+        investment_cost_for_out_of_sample = 0.0
+        investment_cost_scaled_to_year_for_out_of_sample = 0.0
 
+        
 # List of your branch counts
 branches = [
     num_branches_to_firstStage,
