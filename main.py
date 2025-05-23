@@ -8,6 +8,7 @@ import os
 import matplotlib.pyplot as plt
 import platform
 import shutil
+import platform
 #import psutil
 from pyomo.environ import *
 #from _run_everything import excel_path, instance, year, num_branches_to_firstStage, num_branches_to_secondStage, num_branches_to_thirdStage, num_branches_to_fourthStage, num_branches_to_fifthStage, num_branches_to_sixthStage, num_branches_to_seventhStage, num_branches_to_eighthStage, num_branches_to_ninthStage, num_branches_to_tenthStage
@@ -959,11 +960,25 @@ opt.options["Method"] = 2  # Use the barrier method
 import datetime
 
 
-# Generate timestamp and run label
-timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-run_label = f"{case}_cluster{cluster}_year{year}_{timestamp}"
+import os
+import datetime
+
+# Ensure a shared run label is used across in-sample and out-of-sample
+run_label_file = os.path.join("Out_of_sample_test", "used_run_label.txt")
+
+if case != "max_out":
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    run_label = f"{case}_cluster{cluster}_year{year}_{timestamp}"
+    with open(run_label_file, "w") as f:
+        f.write(run_label)
+else:
+    with open(run_label_file, "r") as f:
+        run_label = f.read().strip()
+
 top_level_results_folder = os.path.join("Results", f"Results_Run_{run_label}")
-os.makedirs(top_level_results_folder, exist_ok=True)
+
+if case == "max_out" and not os.path.exists(run_label_file):
+    raise FileNotFoundError("❌ Could not find used_run_label.txt. Run an in-sample case first.")
 
 # Define in-sample and out-of-sample result subfolders
 in_sample_folder = os.path.join(top_level_results_folder, "In_sample_results")
@@ -1393,12 +1408,12 @@ if case in ["wide", "deep", "max_in", "git_push"]:
 
     # 1. Update parameter files using v_new_tech and v_new_bat
     write_updated_initial_parameters(our_model, out_of_sample_folder)
-    
 
     # 2. Solve max-case using only files in Out_of_sample_test/
     os.chdir("Out_of_sample_test")
     os.system(f"python ../main.py --year 2025 --case max_out --cluster season")
     os.chdir("..")
+    
 
 
 
