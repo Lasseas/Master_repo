@@ -969,36 +969,42 @@ import datetime
 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 run_label = f"case{case}_cluster{cluster}_year{year}_{timestamp}"
 
-top_level_results_folder = os.path.join("Results", f"Results_{filenumber}")
-in_sample_folder = os.path.join(top_level_results_folder, "In_sample_results")
-out_of_sample_folder = os.path.join(top_level_results_folder, "Out_of_sample_results")
-input_data_folder = os.path.join(top_level_results_folder, "input_data")
+result_folder = os.path.join("Results", f"Results_{filenumber}")
+#in_sample_folder = os.path.join(top_level_results_folder, "In_sample_results")
+#out_of_sample_folder = os.path.join(top_level_results_folder, "Out_of_sample_results
+input_data_folder = os.path.join(result_folder, "input_data")
 
 
 
 # Subfolders inside it
-in_sample_folder = os.path.join(top_level_results_folder, "In_sample_results")
-out_of_sample_folder = os.path.join(top_level_results_folder, "Out_of_sample_results")
-input_data_folder = os.path.join(top_level_results_folder, "input_data")
+#in_sample_folder = os.path.join(top_level_results_folder, "In_sample_results")
+#out_of_sample_folder = os.path.join(top_level_results_folder, "Out_of_sample_results")
+#input_data_folder = os.path.join(top_level_results_folder, "input_data")
 
 # Create only if they don’t exist
-os.makedirs(in_sample_folder, exist_ok=True)
-os.makedirs(out_of_sample_folder, exist_ok=True)
+#os.makedirs(in_sample_folder, exist_ok=True)
+#os.makedirs(out_of_sample_folder, exist_ok=True)
 os.makedirs(input_data_folder, exist_ok=True)
 
 
 # === Clean up old Gurobi logs ===
-for f in os.listdir(in_sample_folder):
-    if f.startswith("gurobi_log_") and f.endswith(".txt"):
-        os.remove(os.path.join(in_sample_folder, f))
+#for f in os.listdir(in_sample_folder):
+   # if f.startswith("gurobi_log_") and f.endswith(".txt"):
+    #    os.remove(os.path.join(in_sample_folder, f))
 
-# === Set Gurobi log file ===
-logfile_temp = os.path.join(in_sample_folder, 'gurobi_log_temp.txt')
+# === Set Gurobi log file in result_folder ===
+# Optional cleanup
+for f in os.listdir(result_folder):
+    if f.startswith("gurobi_log_") and f.endswith(".txt"):
+        os.remove(os.path.join(result_folder, f))
+
+# Set temporary Gurobi log
+logfile_temp = os.path.join(result_folder, 'gurobi_log_temp.txt')
 opt.options['LogFile'] = logfile_temp
 
+
 print("✅ Created folders:")
-print("  In-sample Results:", os.path.exists(in_sample_folder))
-print("  Out-of-sample Results:", os.path.exists(out_of_sample_folder))
+print("  Results:", os.path.exists(result_folder))
 print("  Input data:", os.path.exists(input_data_folder))
 
 # === Copy input files ===
@@ -1015,8 +1021,8 @@ running_time = end_time - start_time
 
 # === Rename Gurobi log file ===
 runtime_str = f"{running_time:.2f}s".replace('.', '_')
-result_target_folder = out_of_sample_folder if case == "max_out" else in_sample_folder
-final_logfile = os.path.join(result_target_folder, f"gurobi_log_{run_label}_{runtime_str}.txt")
+#result_target_folder = out_of_sample_folder if case == "max_out" else in_sample_folder
+final_logfile = os.path.join(result_folder, f"gurobi_log_{run_label}_{runtime_str}.txt")
 os.rename(logfile_temp, final_logfile)
 
 
@@ -1062,7 +1068,7 @@ Simplex Iterations: {simplex_iterations}
 """
 
 runtime_txt_filename = f"runtime_log_{run_label}.txt"
-with open(os.path.join(result_target_folder, runtime_txt_filename), "w") as f:
+with open(os.path.join(result_folder, runtime_txt_filename), "w") as f:
     f.write(runtime_log)
 
 
@@ -1124,7 +1130,7 @@ def save_results_to_excel(model_instance, run_label, target_folder, max_rows_per
 
 
 # === Write Excel results ===
-excel_filename = save_results_to_excel(our_model, run_label, result_target_folder)
+excel_filename = save_results_to_excel(our_model, run_label, result_folder)
 
 
 
@@ -1145,13 +1151,13 @@ if case != "max_out":
     investment_cost_scaled_to_year_for_out_of_sample = (investment_cost_for_out_of_sample / 5) * 365
 
     # Save to file
-    with open(os.path.join(out_of_sample_folder, "in_sample_investment_cost.txt"), "w") as f:
+    with open(os.path.join(result_folder, "in_sample_investment_cost.txt"), "w") as f:
         f.write(f"{investment_cost_for_out_of_sample},{investment_cost_scaled_to_year_for_out_of_sample}")
 
 if case == "max_out":
     # Load the in-sample investment cost from file
     try:
-        with open(os.path.join(out_of_sample_folder, "in_sample_investment_cost.txt"), "r") as f:
+        with open(os.path.join(result_folder, "in_sample_investment_cost.txt"), "r") as f:
             line = f.readline().strip()
             investment_cost_for_out_of_sample, investment_cost_scaled_to_year_for_out_of_sample = map(float, line.split(","))
     except FileNotFoundError:
@@ -1193,10 +1199,48 @@ num_scenarios = max(cumulative) if cumulative else 1
 
 #print("Number of scenarios:", num_scenarios)
 
-if case == "max_out":
+if case != "max_out":
     
     # Create contents
-    case_and_objective_content = f"""Case and Objective Summary (Out-Of-Sample test)
+    case_and_objective_content = f"""Case and Objective Summary (in-sample test)
+    -----------------------------
+    Excel path: {excel_path}
+    year: {year}
+    cluster: {cluster}
+    case: {case}
+
+    Number of branches per stage:
+    - Stage 1: {num_branches_to_firstStage}
+    - Stage 2: {num_branches_to_secondStage}
+    - Stage 3: {num_branches_to_thirdStage}
+    - Stage 4: {num_branches_to_fourthStage}
+    - Stage 5: {num_branches_to_fifthStage}
+    - Stage 6: {num_branches_to_sixthStage}
+    - Stage 7: {num_branches_to_seventhStage}
+    - Stage 8: {num_branches_to_eighthStage}
+    - Stage 9: {num_branches_to_ninthStage}
+    - Stage 10: {num_branches_to_tenthStage}
+    - Stage 11: {num_branches_to_eleventhStage}
+    - Stage 12: {num_branches_to_twelfthStage}
+    - Stage 13: {num_branches_to_thirteenthStage}
+    - Stage 14: {num_branches_to_fourteenthStage}
+    - Stage 15: {num_branches_to_fifteenthStage}
+
+    Number of Scenarios: {num_scenarios}
+    Number of Nodes: {num_Nodes}
+    Objective Value: {objective_value:.2f}
+    Investment Cost (tech+bat): {investment_cost:.2f}
+    ----------------------------------------------------
+    SCALED TO YEARLY COSTS:
+    ----------------------------------------------------
+    Objective Value (scaled to yearly cost): {objective_scaled_to_year:.2f}
+    Investment Cost (scaled to yearly cost): {investment_cost_scaled_to_year:.2f}
+    """
+
+
+else: 
+    # Create contents
+    case_and_objective_content = f"""Case and Objective Summary (Out-of-Sample test)
     -----------------------------
     Excel path: {excel_path}
     year: {year}
@@ -1232,70 +1276,16 @@ if case == "max_out":
     Objective value incl. investment cost (scaled to yearly cost):{objective_scaled_to_year + investment_cost_scaled_to_year_for_out_of_sample:.2f}
     Load shedding cost (scaled to yearly cost): {loadShedding_cost_scaled_to_year:.2f}
     """
-else: 
-    # Create contents
-    case_and_objective_content = f"""Case and Objective Summary (In-Sample test)
-    -----------------------------
-    Excel path: {excel_path}
-    year: {year}
-    cluster: {cluster}
-    case: {case}
 
-    Number of branches per stage:
-    - Stage 1: {num_branches_to_firstStage}
-    - Stage 2: {num_branches_to_secondStage}
-    - Stage 3: {num_branches_to_thirdStage}
-    - Stage 4: {num_branches_to_fourthStage}
-    - Stage 5: {num_branches_to_fifthStage}
-    - Stage 6: {num_branches_to_sixthStage}
-    - Stage 7: {num_branches_to_seventhStage}
-    - Stage 8: {num_branches_to_eighthStage}
-    - Stage 9: {num_branches_to_ninthStage}
-    - Stage 10: {num_branches_to_tenthStage}
-    - Stage 11: {num_branches_to_eleventhStage}
-    - Stage 12: {num_branches_to_twelfthStage}
-    - Stage 13: {num_branches_to_thirteenthStage}
-    - Stage 14: {num_branches_to_fourteenthStage}
-    - Stage 15: {num_branches_to_fifteenthStage}
-
-    Number of Scenarios: {num_scenarios}
-    Number of Nodes: {num_Nodes}
-    Objective Value: {objective_value:.2f}
-    Investment Cost (tech+bat): {investment_cost:.2f}
-    ----------------------------------------------------
-    SCALED TO YEARLY COSTS:
-    ----------------------------------------------------
-    Objective Value (scaled to yearly cost): {objective_scaled_to_year:.2f}
-    Investment Cost (scaled to yearly cost): {investment_cost_scaled_to_year:.2f}
-    """
-
-case_and_objective_path = os.path.join(result_target_folder, f"case_and_objective_info_{'out' if case == 'max_out' else 'in'}.txt")
+case_and_objective_path = os.path.join(result_folder, f"case_and_objective_info_{'out' if case == 'max_out' else 'in'}.txt")
 with open(case_and_objective_path, "w") as f:
     f.write(case_and_objective_content)
 
 print("Working directory:", os.getcwd())
-print("Results folder will be:", result_target_folder)
+print("Results folder will be:", result_folder)
 print("Input folder will be:", input_data_folder)
 
 
-
-
-
-print("Working directory:", os.getcwd())
-print("Results folder will be:", in_sample_folder)
-print("Input folder will be:", input_data_folder)
-
-
-
-
-
-# === Write case/cluster summary ===
-case_and_objective_path = os.path.join(result_target_folder, f"case_and_objective_info_{'out' if case == 'max_out' else 'in'}.txt")
-with open(case_and_objective_path, "w") as f:
-    f.write(case_and_objective_content)
-
-
-#save_results_to_excel(our_model, filename=os.path.join(results_folder, "Variable_Results.xlsx"))
 
 
 def write_updated_initial_parameters(model_instance, folder_path):
@@ -1366,13 +1356,13 @@ def write_updated_initial_parameters(model_instance, folder_path):
 
 
 #out_of_sample_folder = "Out_of_sample_results"
-write_updated_initial_parameters(our_model, out_of_sample_folder)
+write_updated_initial_parameters(our_model, result_folder)
 
 if case in ["wide", "deep", "max_in", "git_push"]:
     print("\n➡️  Running out-of-sample test for 'max_out' case...\n")
 
     # 1. Update parameter files using v_new_tech and v_new_bat
-    write_updated_initial_parameters(our_model, out_of_sample_folder)
+    write_updated_initial_parameters(our_model, "Out_of_sample_test")
 
     # 2. Solve max-case using only files in Out_of_sample_test/
     os.chdir("Out_of_sample_test")
