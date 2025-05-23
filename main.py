@@ -968,19 +968,20 @@ import datetime
 # base_dir = os.getcwd()
 
 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-run_label = f"case{case}_cluster{cluster}_year{year}_{timestamp}"
+run_label = f"case_{case}_cluster_{cluster}_year_{year}_{timestamp}"
+
 
 
 # Use the script’s location as base_dir.
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
-if case == "max_out":
-    result_folder = os.path.join(base_dir, "Results", f"out_of_sample_results_{filenumber}")
-else:
-    result_folder = os.path.join(base_dir, "Results", f"in_sample_results_{filenumber}")
+# Revert to a single results folder using run_label (or filenumber as before)
+result_folder = os.path.join(base_dir, "Results", f"Results_{filenumber}")
 
 input_data_folder = os.path.join(result_folder, "input_data")
 os.makedirs(input_data_folder, exist_ok=True)
+
+
 # Create results folder using a fixed base directory
 #result_folder = os.path.join(base_dir, "Results", f"Results_{filenumber}")
 #input_data_folder = os.path.join(result_folder, "input_data")
