@@ -1378,10 +1378,9 @@ if case in ["wide", "deep", "max_in", "git_push"]:
     # Get absolute path for main.py and launch with cwd set to the out-of-sample folder
     main_abs = os.path.join(base_dir, "main.py")
     subprocess.run(
-        ["python", main_abs, "--year", {year}, "--case", "max_out", "--cluster", "season", "--file", filenumber],
+        ["python", main_abs, "--year", str(year), "--case", "max_out", "--cluster", "season", "--file", filenumber],
         cwd=out_sample_folder
     )
-
 
 
 """
