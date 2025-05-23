@@ -956,14 +956,10 @@ opt.options["Crossover"] = 0  # Set crossover value
 opt.options["Method"] = 2  # Use the barrier method
 
 
-# === Create Results and input folder ===
-import datetime
-
-
 import os
 import datetime
 
-# Ensure a shared run label is used across in-sample and out-of-sample
+# === Generate or load shared run label ===
 run_label_file = os.path.join("Out_of_sample_test", "used_run_label.txt")
 
 if case != "max_out":
@@ -972,15 +968,13 @@ if case != "max_out":
     with open(run_label_file, "w") as f:
         f.write(run_label)
 else:
+    if not os.path.exists(run_label_file):
+        raise FileNotFoundError("❌ Could not find used_run_label.txt. Run an in-sample case first.")
     with open(run_label_file, "r") as f:
         run_label = f.read().strip()
 
+# === Create folder structure ===
 top_level_results_folder = os.path.join("Results", f"Results_Run_{run_label}")
-
-if case == "max_out" and not os.path.exists(run_label_file):
-    raise FileNotFoundError("❌ Could not find used_run_label.txt. Run an in-sample case first.")
-
-# Define in-sample and out-of-sample result subfolders
 in_sample_folder = os.path.join(top_level_results_folder, "In_sample_results")
 out_of_sample_folder = os.path.join(top_level_results_folder, "Out_of_sample_results")
 input_data_folder = os.path.join(top_level_results_folder, "input_data")
@@ -989,40 +983,12 @@ os.makedirs(in_sample_folder, exist_ok=True)
 os.makedirs(out_of_sample_folder, exist_ok=True)
 os.makedirs(input_data_folder, exist_ok=True)
 
-# Clean up old Gurobi logs in result folder
+# === Clean up old Gurobi logs ===
 for f in os.listdir(in_sample_folder):
     if f.startswith("gurobi_log_") and f.endswith(".txt"):
         os.remove(os.path.join(in_sample_folder, f))
 
-# Set Gurobi log file to temp file
-logfile_temp = os.path.join(in_sample_folder, 'gurobi_log_temp.txt')
-opt.options['LogFile'] = logfile_temp
-
-print("✅ Created folders:")
-print("  In-sample Results:", os.path.exists(in_sample_folder))
-print("  Out-of-sample Results:", os.path.exists(out_of_sample_folder))
-print("  Input data:", os.path.exists(input_data_folder))
-# Generate timestamp and run label
-timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-run_label = f"{case}_cluster{cluster}_year{year}_{timestamp}"
-top_level_results_folder = os.path.join("Results", f"Results_Run_{run_label}")
-os.makedirs(top_level_results_folder, exist_ok=True)
-
-# Define in-sample and out-of-sample result subfolders
-in_sample_folder = os.path.join(top_level_results_folder, "In_sample_results")
-out_of_sample_folder = os.path.join(top_level_results_folder, "Out_of_sample_results")
-input_data_folder = os.path.join(top_level_results_folder, "input_data")
-
-os.makedirs(in_sample_folder, exist_ok=True)
-os.makedirs(out_of_sample_folder, exist_ok=True)
-os.makedirs(input_data_folder, exist_ok=True)
-
-# Clean up old Gurobi logs in result folder
-for f in os.listdir(in_sample_folder):
-    if f.startswith("gurobi_log_") and f.endswith(".txt"):
-        os.remove(os.path.join(in_sample_folder, f))
-
-# Set Gurobi log file to temp file
+# === Set Gurobi log file ===
 logfile_temp = os.path.join(in_sample_folder, 'gurobi_log_temp.txt')
 opt.options['LogFile'] = logfile_temp
 
@@ -1031,26 +997,21 @@ print("  In-sample Results:", os.path.exists(in_sample_folder))
 print("  Out-of-sample Results:", os.path.exists(out_of_sample_folder))
 print("  Input data:", os.path.exists(input_data_folder))
 
-
-# Step 3: Copy files
+# === Copy input files ===
 input_extensions = (".tab", ".xlsx", ".csv", ".dat")
 for fname in os.listdir("."):
     if os.path.isfile(fname) and not fname.endswith(".py") and fname.endswith(input_extensions):
         shutil.copy2(fname, os.path.join(input_data_folder, fname))
 
-# Step 2: Start timing and solve
+# === Solve model ===
 start_time = time.time()
 results = opt.solve(our_model, tee=True)
 end_time = time.time()
 running_time = end_time - start_time
 
-# Rename Gurobi log file with run label
+# === Rename Gurobi log file ===
 runtime_str = f"{running_time:.2f}s".replace('.', '_')
-
-# Usage after solving the model
-# Choose correct result folder based on case
 result_target_folder = out_of_sample_folder if case == "max_out" else in_sample_folder
-#
 final_logfile = os.path.join(result_target_folder, f"gurobi_log_{run_label}_{runtime_str}.txt")
 os.rename(logfile_temp, final_logfile)
 
@@ -1413,7 +1374,7 @@ if case in ["wide", "deep", "max_in", "git_push"]:
     os.chdir("Out_of_sample_test")
     os.system(f"python ../main.py --year 2025 --case max_out --cluster season")
     os.chdir("..")
-    
+
 
 
 
