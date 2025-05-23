@@ -964,16 +964,25 @@ import datetime
 # === Generate or load shared run label ===
 # Only create a new run_label if it's not a max_out case
 
-
+base_dir = os.getcwd()  # use the absolute current working directory
 
 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 run_label = f"case{case}_cluster{cluster}_year{year}_{timestamp}"
 
-result_folder = os.path.join("Results", f"Results_{filenumber}")
+#result_folder = os.path.join("Results", f"Results_{filenumber}")
 #in_sample_folder = os.path.join(top_level_results_folder, "In_sample_results")
 #out_of_sample_folder = os.path.join(top_level_results_folder, "Out_of_sample_results
-input_data_folder = os.path.join(result_folder, "input_data")
+#input_data_folder = os.path.join(result_folder, "input_data")
 
+import os
+
+
+# Instead of:
+# result_folder = os.path.join("Results", f"Results_{filenumber}")
+# Use:
+result_folder = os.path.join(base_dir, "Results", f"Results_{filenumber}")
+input_data_folder = os.path.join(result_folder, "input_data")
+os.makedirs(input_data_folder, exist_ok=True)
 
 
 # Subfolders inside it
@@ -1360,15 +1369,18 @@ write_updated_initial_parameters(our_model, result_folder)
 
 if case in ["wide", "deep", "max_in", "git_push"]:
     print("\n➡️  Running out-of-sample test for 'max_out' case...\n")
-
-    # 1. Update parameter files using v_new_tech and v_new_bat
-    write_updated_initial_parameters(our_model, "Out_of_sample_test")
-
-    # 2. Solve max-case using only files in Out_of_sample_test/
-    os.chdir("Out_of_sample_test")
-    os.system(f"python ../main.py --year 2025 --case max_out --cluster season --file {filenumber}")
-    os.chdir("..")
-
+    
+    # 1. Update parameter files into the Out_of_sample_test folder
+    out_sample_folder = os.path.join(base_dir, "Out_of_sample_test")
+    write_updated_initial_parameters(our_model, out_sample_folder)
+    
+    import subprocess
+    # Get absolute path for main.py and launch with cwd set to the out-of-sample folder
+    main_abs = os.path.join(base_dir, "main.py")
+    subprocess.run(
+        ["python", main_abs, "--year", {year}, "--case", "max_out", "--cluster", "season", "--file", filenumber],
+        cwd=out_sample_folder
+    )
 
 
 
