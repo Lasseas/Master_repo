@@ -44,7 +44,7 @@ case_configs = {
     "wide": (2, 30, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
     "deep": (2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0),
     "max_in":  (2, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-    "max_out":  (2, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+    "max_out":  (2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
     "git_push": (2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 }
 
@@ -1092,14 +1092,14 @@ EXTRACT VALUE OF VARIABLES AND WRITE THEM INTO EXCEL FILE
 
 print("Writing results to .xlsx...")
 
-def save_results_to_excel(model_instance, run_label, max_rows_per_sheet=1_000_000):
+def save_results_to_excel(model_instance, run_label, target_folder, max_rows_per_sheet=1_000_000):
     import pandas as pd
     from pyomo.environ import value
+    import os
 
     filename = f"Variable_Results_{run_label}.xlsx"
+    full_path = os.path.join(target_folder, filename)
 
-
-    # Ensure xlsxwriter is available
     try:
         import xlsxwriter
     except ImportError:
@@ -1110,9 +1110,9 @@ def save_results_to_excel(model_instance, run_label, max_rows_per_sheet=1_000_00
         site.addsitedir(site.getusersitepackages())
         import xlsxwriter
 
-    with pd.ExcelWriter(filename, engine="xlsxwriter") as writer:
+    with pd.ExcelWriter(full_path, engine="xlsxwriter") as writer:
         for var in model_instance.component_objects(pyo.Var, active=True):
-            if var.name not in ["v_new_tech", "v_new_bat", "Not_Supplied_Energy", "I_loadShedding"]:
+            if var.name not in ["v_new_tech", "v_new_bat", "Not_Supplied_Energy"]:
                 continue
             var_name = var.name
             var_data = []
@@ -1122,8 +1122,7 @@ def save_results_to_excel(model_instance, run_label, max_rows_per_sheet=1_000_00
                     var_value = value(var[index])
                 except:
                     continue
-                #    var_value = 0
-                if abs(var_value) > 1e-3:  # Only include significant values
+                if abs(var_value) > 1e-3:
                     var_data.append((index, var_value))
 
             if var_data:
@@ -1140,12 +1139,13 @@ def save_results_to_excel(model_instance, run_label, max_rows_per_sheet=1_000_00
                     sheet_title = f"{var_name[:25]}_{i // max_rows_per_sheet + 1}"
                     df_chunk.to_excel(writer, sheet_name=sheet_title, index=False)
 
-    print(f"Variable results saved to {filename}")
-    return filename
+    print(f"Variable results saved to {full_path}")
+    return full_path
+
 
 # === Write Excel results ===
-excel_filename = save_results_to_excel(our_model, run_label)
-shutil.move(excel_filename, os.path.join(result_target_folder, excel_filename))
+excel_filename = save_results_to_excel(our_model, run_label, result_target_folder)
+
 
 
 # === Write case and objective summary ===
