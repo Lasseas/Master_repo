@@ -431,6 +431,7 @@ model.Dwn_Shift = pyo.Var(model.Nodes, model.Time, model.EnergyCarrier, domain =
 model.aggregated_Up_Shift = pyo.Var(model.Nodes, model.EnergyCarrier, domain = pyo.NonNegativeReals)
 model.aggregated_Dwn_Shift = pyo.Var(model.Nodes, model.EnergyCarrier, domain = pyo.NonNegativeReals)
 model.Not_Supplied_Energy = pyo.Var(model.Nodes, model.Time, model.EnergyCarrier, domain = pyo.NonNegativeReals)
+model.I_loadShedding = pyo.Var()
 model.I_inv = pyo.Var()
 model.I_GT = pyo.Var()
 model.I_cap_bid = pyo.Var(model.Time)
@@ -538,6 +539,9 @@ def cost_opex(model, n, s, t):
 model.OPEXCost = pyo.Constraint(model.Nodes_in_stage, model.Time, rule=cost_opex)
 
 
+def cost_load_shedding(model):
+    return model.I_loadShedding == sum(sum(sum(model.Node_Probability[n] * 10_000 * model.Not_Supplied_Energy[n, t, e] for (n,s) in model.Nodes_in_stage if s == model.Period) for t in model.Time) for e in model.EnergyCarrier)
+model.CostLoadShedding = pyo.Constraint(rule=cost_load_shedding)
 
 ###########################################
 ############## ENERGY BALANCE #############
@@ -1107,7 +1111,7 @@ def save_results_to_excel(model_instance, run_label, max_rows_per_sheet=1_000_00
 
     with pd.ExcelWriter(filename, engine="xlsxwriter") as writer:
         for var in model_instance.component_objects(pyo.Var, active=True):
-            if var.name not in ["v_new_tech", "v_new_bat", "Not_Supplied_Energy"]:
+            if var.name not in ["v_new_tech", "v_new_bat", "Not_Supplied_Energy", "I_loadShedding"]:
                 continue
             var_name = var.name
             var_data = []
@@ -1309,7 +1313,7 @@ def write_updated_initial_parameters(model_instance, folder_path):
 
 
 
-out_of_sample_folder = "Out_of_sample_test"
+out_of_sample_folder = "Out_of_sample_results"
 write_updated_initial_parameters(our_model, out_of_sample_folder)
 
 if case in ["wide", "deep", "max_in"]:
