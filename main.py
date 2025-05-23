@@ -46,7 +46,7 @@ case_configs = {
     "wide": (2, 30, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
     "deep": (2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0),
     "max_in":  (2, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-    "max_out":  (2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+    "max_out":  (2, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0),
     "git_push": (2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 }
 
@@ -162,7 +162,7 @@ def generate_cost_activity(num_nodes, num_timesteps, cost_activity, filename="Pa
         make_tab_file(filename, data_generator())
 
 if case == "max_out":
-    generate_cost_activity(num_nodes = 14, num_timesteps = 24, cost_activity = cost_activity)
+    generate_cost_activity(num_nodes = 7812, num_timesteps = 24, cost_activity = cost_activity)
 
 
 import os
@@ -1123,7 +1123,7 @@ def save_results_to_excel(model_instance, run_label, target_folder, max_rows_per
 
     with pd.ExcelWriter(full_path, engine="xlsxwriter") as writer:
         for var in model_instance.component_objects(pyo.Var, active=True):
-            if var.name not in ["v_new_tech", "v_new_bat", "Not_Supplied_Energy", "y_activity"]:
+            if var.name not in ["v_new_tech", "v_new_bat", "Not_Supplied_Energy"]:
                 continue
             var_name = var.name
             var_data = []
