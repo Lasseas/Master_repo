@@ -25,7 +25,7 @@ from Generate_data_files import run_everything
 parser = argparse.ArgumentParser(description="Run model instance")
 #parser.add_argument("--instance", type=int, required=True, help="Instance number (e.g., 1–5)")
 parser.add_argument("--year", type=int, required=True, help="Year (e.g., 2025 or 2050)")
-parser.add_argument("--case", type=str, required=True, choices=["wide", "deep", "max_in", "max_out"], help="Specify case type")
+parser.add_argument("--case", type=str, required=True, choices=["wide", "deep", "max_in", "max_out", "git_push"], help="Specify case type")
 parser.add_argument("--cluster", type=str, required=True, choices=["random", "season", "demand"], help="Specify case type")
 args = parser.parse_args()
 
@@ -43,8 +43,9 @@ excel_path = "NO1_Pulp_Paper_2024_combined historical data_Uten_SatSun.xlsx"
 case_configs = {
     "wide": (2, 30, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
     "deep": (2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0),
-    "max_in":  (2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-    "max_out":  (2, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    "max_in":  (2, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+    "max_out":  (2, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+    "git_push": (2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 }
 
 (
