@@ -1416,7 +1416,7 @@ if case in ["wide", "deep", "max_in", "git_push"]:
     import subprocess
     main_abs = os.path.join(base_dir, "main.py")
     subprocess.run(
-        ["python", main_abs, "--year", str(year), "--case", "max_out", "--cluster", "season", "--file", filenumber],
+        ["python", main_abs, "--year", str(year), "--case", "max_out", "--cluster", "season"],
         cwd=out_sample_folder
     )
 
