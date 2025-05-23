@@ -28,6 +28,7 @@ parser = argparse.ArgumentParser(description="Run model instance")
 parser.add_argument("--year", type=int, required=True, help="Year (e.g., 2025 or 2050)")
 parser.add_argument("--case", type=str, required=True, choices=["wide", "deep", "max_in", "max_out", "git_push"], help="Specify case type")
 parser.add_argument("--cluster", type=str, required=True, choices=["random", "season", "demand"], help="Specify case type")
+parser.add_argument("--file", type=str, required=True, help="Path to the Result file")
 args = parser.parse_args()
 
 #instance = args.instance
@@ -35,6 +36,7 @@ args = parser.parse_args()
 year = args.year
 case = args.case
 cluster = args.cluster
+filenumber = args.file
 instance = 1
 excel_path = "NO1_Pulp_Paper_2024_combined historical data_Uten_SatSun.xlsx"
 #excel_path = "NO1_Pulp_Paper_2024_combined historical data.xlsx"
@@ -961,31 +963,18 @@ import datetime
 
 # === Generate or load shared run label ===
 # Only create a new run_label if it's not a max_out case
-run_label_file = os.path.join("Out_of_sample_test", "used_run_label.txt")
-
-if case != "max_out":
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_label = f"{case}_cluster{cluster}_year{year}_{timestamp}"
-    with open(run_label_file, "w") as f:
-        f.write(run_label)
-else:
-    if not os.path.exists(run_label_file):
-        raise FileNotFoundError("❌ No in-sample run_label found. Run an in-sample case first.")
-    with open(run_label_file, "r") as f:
-        run_label = f.read().strip()
 
 
-"""
+
 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-run_label = f"{case}_cluster{cluster}_year{year}_{timestamp}"
+run_label = f"case{case}_cluster{cluster}_year{year}_{timestamp}"
 
-top_level_results_folder = os.path.join("Results", f"Results_Run_{run_label}")
+top_level_results_folder = os.path.join("Results", f"Results_{filenumber}")
 in_sample_folder = os.path.join(top_level_results_folder, "In_sample_results")
 out_of_sample_folder = os.path.join(top_level_results_folder, "Out_of_sample_results")
 input_data_folder = os.path.join(top_level_results_folder, "input_data")
-"""
-# Only one top-level folder — always based on run_label
-top_level_results_folder = os.path.join("Results", f"Results_Run_{run_label}")
+
+
 
 # Subfolders inside it
 in_sample_folder = os.path.join(top_level_results_folder, "In_sample_results")
