@@ -1388,7 +1388,7 @@ def write_updated_initial_parameters(model_instance, folder_path):
 #out_of_sample_folder = "Out_of_sample_results"
 write_updated_initial_parameters(our_model, out_of_sample_folder)
 
-if case in ["wide", "deep", "max_in"]:
+if case in ["wide", "deep", "max_in", "git_push"]:
     print("\n➡️  Running out-of-sample test for 'max_out' case...\n")
 
     # 1. Update parameter files using v_new_tech and v_new_bat
