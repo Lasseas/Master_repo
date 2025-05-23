@@ -775,7 +775,9 @@ def run_everything(excel_path, instance, year, cluster, num_branches_to_firstSta
         def data_generator():
             # Read the periods tab file
             df_periods = pd.read_csv(periods_tab, sep="\t")
-
+            df_all = pd.DataFrame({"LoadShiftingPeriod": df_periods["Periods"]})
+            yield df_all
+            """
             if excel_path == "NO1_Aluminum_2024_combined historical data.xlsx":
                 # Use all periods
                 df_all = pd.DataFrame({"LoadShiftingPeriod": df_periods["Periods"]})
@@ -787,6 +789,7 @@ def run_everything(excel_path, instance, year, cluster, num_branches_to_firstSta
                 yield df_last
             else:
                 raise ValueError(f"Unknown excel_path: {excel_path}")
+            """
 
         # Use the make_tab_file function to write the result
         make_tab_file(filename, data_generator())

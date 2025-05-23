@@ -966,21 +966,30 @@ import datetime
 
 # Instead of:
 # base_dir = os.getcwd()
-base_dir = os.path.dirname(os.path.abspath(__file__))
 
 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 run_label = f"case{case}_cluster{cluster}_year{year}_{timestamp}"
 
-# Create results folder using a fixed base directory
-result_folder = os.path.join(base_dir, "Results", f"Results_{filenumber}")
+
+# Use the script’s location as base_dir.
+base_dir = os.path.dirname(os.path.abspath(__file__))
+
+if case == "max_out":
+    result_folder = os.path.join(base_dir, "Results", f"out_of_sample_results_{filenumber}")
+else:
+    result_folder = os.path.join(base_dir, "Results", f"in_sample_results_{filenumber}")
+
 input_data_folder = os.path.join(result_folder, "input_data")
 os.makedirs(input_data_folder, exist_ok=True)
+# Create results folder using a fixed base directory
+#result_folder = os.path.join(base_dir, "Results", f"Results_{filenumber}")
+#input_data_folder = os.path.join(result_folder, "input_data")
+#os.makedirs(input_data_folder, exist_ok=True)
 #result_folder = os.path.join("Results", f"Results_{filenumber}")
 #in_sample_folder = os.path.join(top_level_results_folder, "In_sample_results")
 #out_of_sample_folder = os.path.join(top_level_results_folder, "Out_of_sample_results
 #input_data_folder = os.path.join(result_folder, "input_data")
 
-import os
 
 
 # Instead of:
