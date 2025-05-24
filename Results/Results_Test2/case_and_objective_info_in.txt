@@ -1,0 +1,53 @@
+Case and Objective Summary (in-sample test)
+    -----------------------------
+    Excel path: NO1_Aluminum_2024_combined historical data.xlsx
+    year: 2025
+    cluster: season
+    case: git_push
+
+    Number of branches per stage:
+    - Stage 1: 2
+    - Stage 2: 2
+    - Stage 3: 2
+    - Stage 4: 0
+    - Stage 5: 0
+    - Stage 6: 0
+    - Stage 7: 0
+    - Stage 8: 0
+    - Stage 9: 0
+    - Stage 10: 0
+    - Stage 11: 0
+    - Stage 12: 0
+    - Stage 13: 0
+    - Stage 14: 0
+    - Stage 15: 0
+
+    Number of Scenarios: 8
+    Number of Nodes: 14
+    Objective Value: 978278.45
+    Investment Cost (tech+bat): 3565.74
+    --------------------------------------------------------------------------
+    SCALED TO YEARLY COSTS:
+    --------------------------------------------------------------------------
+    Objective Value (scaled to yearly cost): 178535818.00
+    Investment Cost (scaled to yearly cost): 650748.44
+
+    
+    ---------------- COST COMPONENT BREAKDOWN: --------------------------------
+    Component                        Value (EUR)     Contribution (% of Obj.)
+    ---------------------------------------------------------------------------
+    Revenue - Capacity Market           -54,150.31         -5.54%
+    Revenue - Activation Market         -12,963.50         -1.33%
+    Cost    - Day-Ahead Market          860,150.16         87.92%
+    Cost    - Intraday Market               798.90          0.08%
+    OPEX                                  87,817.60          8.98%
+    Grid Tariff                           93,059.87          9.51%
+    Load Shedding                              0.00          0.00%
+    Investment                             3,565.74          0.36%
+    ---------------------------------------------------------------------------
+
+    ---------------------- DIV ---------------------------------
+    Imbalance cost related to Real-time adjustment import: 0.00
+    Imbalance cost related to Real-time adjustment export: 0.00
+    Total DummyFuel used by Dummy Grid: 0.00
+    

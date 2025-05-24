@@ -519,10 +519,6 @@ def run_everything(excel_path, instance, year, cluster, num_branches_to_firstSta
     #####################################################################################
     ########################### CLUSTER BASERT PÅ 2 ÅRSTIDER ############################
     #####################################################################################
-    parent_month_mapping = {
-        1: [4, 5, 6, 7, 8, 9],
-        2: [1, 2, 3, 10, 11, 12],
-    }
 
     # Extend parent_month_mapping assignment to parent nodes as well
     node_to_day = {}
@@ -530,8 +526,8 @@ def run_everything(excel_path, instance, year, cluster, num_branches_to_firstSta
     # Handle cluster types
     if cluster == "random":
         parent_month_mapping = {
-            1: [1,2,3,4, 5, 6, 7, 8, 9, 10, 11, 12],
-            2: [1, 2, 3,4,5,6,7,8,9, 10, 11, 12],
+            1: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+            2: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
         }
 
         

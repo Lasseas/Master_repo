@@ -1,0 +1,53 @@
+Case and Objective Summary (in-sample test)
+    -----------------------------
+    Excel path: NO1_Pulp_Paper_2024_combined historical data_Uten_SatSun.xlsx
+    year: 2025
+    cluster: season
+    case: git_push
+
+    Number of branches per stage:
+    - Stage 1: 2
+    - Stage 2: 2
+    - Stage 3: 2
+    - Stage 4: 0
+    - Stage 5: 0
+    - Stage 6: 0
+    - Stage 7: 0
+    - Stage 8: 0
+    - Stage 9: 0
+    - Stage 10: 0
+    - Stage 11: 0
+    - Stage 12: 0
+    - Stage 13: 0
+    - Stage 14: 0
+    - Stage 15: 0
+
+    Number of Scenarios: 8
+    Number of Nodes: 14
+    Objective Value: 274183.60
+    Investment Cost (tech+bat): 64850.61
+    --------------------------------------------------------------------------
+    SCALED TO YEARLY COSTS:
+    --------------------------------------------------------------------------
+    Objective Value (scaled to yearly cost): 50038506.84
+    Investment Cost (scaled to yearly cost): 11835237.13
+
+    
+    ---------------- COST COMPONENT BREAKDOWN: --------------------------------
+    Component                        Value (EUR)     Contribution (% of Obj.)
+    ---------------------------------------------------------------------------
+    Revenue - Capacity Market           -15,607.85         -5.69%
+    Revenue - Activation Market          -5,158.70         -1.88%
+    Cost    - Day-Ahead Market          173,602.68         63.32%
+    Cost    - Intraday Market               133.52          0.05%
+    OPEX                                  29,934.46         10.92%
+    Grid Tariff                           26,428.87          9.64%
+    Load Shedding                              0.00          0.00%
+    Investment                            64,850.61         23.65%
+    ---------------------------------------------------------------------------
+
+    ---------------------- DIV ---------------------------------
+    Imbalance cost related to Real-time adjustment import: 0.00
+    Imbalance cost related to Real-time adjustment export: 0.00
+    Total DummyFuel used by Dummy Grid: 0.00
+    

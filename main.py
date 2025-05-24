@@ -27,6 +27,7 @@ parser = argparse.ArgumentParser(description="Run model instance")
 parser.add_argument("--year", type=int, required=True, help="Year (e.g., 2025 or 2050)")
 parser.add_argument("--case", type=str, required=True, choices=["wide", "deep", "max_in", "max_out", "git_push"], help="Specify case type")
 parser.add_argument("--cluster", type=str, required=True, choices=["random", "season", "demand"], help="Specify case type")
+parser.add_argument("--industry", type=str, required=True, choices = ["pulp", "alu"], help="Specify industry type")
 parser.add_argument("--file", type=str, required=True, help="Path to the Result file")
 args = parser.parse_args()
 
@@ -36,8 +37,16 @@ year = args.year
 case = args.case
 cluster = args.cluster
 filenumber = args.file
+industrytype = args.industry
 instance = 1
-excel_path = "NO1_Pulp_Paper_2024_combined historical data_Uten_SatSun.xlsx"
+
+if industrytype == "pulp":
+    excel_path = "NO1_Pulp_Paper_2024_combined historical data_Uten_SatSun.xlsx"
+elif industrytype == "alu":
+    excel_path = "NO1_Aluminum_2024_combined historical data.xlsx"
+else:
+    raise ValueError("Invalid industry type. Please choose 'pulp' or 'alu'.")
+#excel_path = "NO1_Pulp_Paper_2024_combined historical data_Uten_SatSun.xlsx"
 #excel_path = "NO1_Pulp_Paper_2024_combined historical data.xlsx"
 #excel_path = "NO1_Aluminum_2024_combined historical data.xlsx"
 
@@ -171,7 +180,12 @@ import os
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 if case == "max_out":
-    tab_file_folder = os.path.join(SCRIPT_DIR, "Out_of_sample_test")
+    if "Pulp" in excel_path:
+        tab_file_folder = os.path.join(SCRIPT_DIR, "Out_of_sample_pulp")
+    elif "Aluminum" in excel_path:
+        tab_file_folder = os.path.join(SCRIPT_DIR, "Out_of_sample_alu")
+    else:
+        raise ValueError("Unknown excel file type. Please check the file name.")
 else:
     tab_file_folder = SCRIPT_DIR
 
@@ -443,7 +457,16 @@ model.I_DA = pyo.Var(model.Nodes, model.Time)
 model.I_ID = pyo.Var(model.Nodes, model.Time)
 model.I_OPEX = pyo.Var(model.Nodes, model.Time)
 
-
+#For printout
+model.I_cap_bid_printOut = pyo.Var()
+model.I_loadShedding = pyo.Var()
+model.I_activation_printOut = pyo.Var()
+model.I_DA_printOut = pyo.Var()
+model.I_ID_printOut = pyo.Var()
+model.I_OPEX_printOut = pyo.Var()
+model.RealTime_Import = pyo.Var()
+model.RealTime_Export = pyo.Var()
+model.Dummy_Grid_utilization = pyo.Var()
 """
 OBJECTIVE
 """ 
@@ -516,19 +539,7 @@ def cost_ID(model, n, p, t, s):
     else:
         return pyo.Constraint.Skip
 model.IDCost = pyo.Constraint(model.Parent_Node, model.Time, model.Period, rule=cost_ID)    
-"""
-def cost_opex(model, n, s, t):
-    return model.I_OPEX[n, t] == (sum(
-                model.y_out[n, t, i, e, o] * (model.Cost_Energy[n, t, i] 
-                + model.Carbon_Intensity[i, o] * model.Cost_Emission)
-                for (i, e, o) in model.TechnologyToEnergyCarrier 
-            ) 
-            - sum(model.Cost_Export[n, t, i] * model.y_in[n, t, i, e, o] for (i, e, o) in model.EnergyCarrierToTechnology)
-            + sum(model.Cost_Battery[b] * model.q_discharge[n, t, b] for b in model.FlexibleLoad)
-            #Legge til Load shift cost?
-    )
-model.OPEXCost = pyo.Constraint(model.Nodes_in_stage, model.Time, rule=cost_opex)
-"""
+
 def cost_opex(model, n, s, t):
     return model.I_OPEX[n, t] == (sum(
                 model.y_activity[n, t, i, o] * (model.cost_activity[n, t, i, o] 
@@ -542,9 +553,134 @@ def cost_opex(model, n, s, t):
 model.OPEXCost = pyo.Constraint(model.Nodes_in_stage, model.Time, rule=cost_opex)
 
 
-def cost_load_shedding(model):
+
+#########################################################################################################
+########################### FOR UTSKRIFT AV DE ULIKE OBJEKTIVKOSTNADENE #################################
+################################ IKKE LAGT TIL I OBJETIVFUNKSJONEN ######################################
+#########################################################################################################
+def cost_load_shedding_for_printout(model):
     return model.I_loadShedding == sum(sum(sum(model.Node_Probability[n] * 10_000 * model.Not_Supplied_Energy[n, t, e] for (n,s) in model.Nodes_in_stage if s == model.Period) for t in model.Time) for e in model.EnergyCarrier)
-model.CostLoadShedding = pyo.Constraint(rule=cost_load_shedding)
+model.CostLoadShedding_printout = pyo.Constraint(rule=cost_load_shedding_for_printout)
+
+# I_Inv og I_GT hentes direkte
+
+def cost_capacity_bid_for_printout(model):
+    nodes_in_last_stage = {n for (n, stage) in model.Nodes_in_stage if stage == model.Period.last()}
+    
+    return model.I_cap_bid_printOut == sum(
+        model.Node_Probability[n] * (
+            - (model.aFRR_Up_Capacity_Price[n, t] * model.x_UP[n, t] +
+               model.aFRR_Dwn_Capacity_Price[n, t] * model.x_DWN[n, t])
+        )
+        for n in model.Nodes if n not in nodes_in_last_stage
+        for t in model.Time
+    )
+
+model.CapacityBidCost_printout = pyo.Constraint(rule=cost_capacity_bid_for_printout)
+
+def cost_activation_for_printout(model):
+    return model.I_activation_printOut == sum(
+        model.Node_Probability[n] * (
+            - model.Activation_Factor_UP_Regulation[n, t] * model.aFRR_Up_Activation_Price[n, t] * model.x_UP[p, t]
+            + model.Activation_Factor_DWN_Regulation[n, t] * model.aFRR_Dwn_Activation_Price[n, t] * model.x_DWN[p, t]
+        )
+        for t in model.Time
+        for s in model.Period
+        for (n, stage) in model.Nodes_in_stage if stage == s
+        for (n_,p) in model.Parent_Node if n_ == n  
+    )
+model.ActivationCost_printout = pyo.Constraint(rule=cost_activation_for_printout)
+
+def cost_DA_for_printout(model):
+    return model.I_DA_printOut == sum(
+        model.Node_Probability[n] * model.Spot_Price[n, t] * (model.x_DA_buy[p, t] - model.x_DA_sell[p, t])
+        for t in model.Time
+        for s in model.Period
+        for (n, stage) in model.Nodes_in_stage if stage == s
+        for (n_, p) in model.Parent_Node if n_ == n
+    )
+
+model.DACostPrintout = pyo.Constraint(rule=cost_DA_for_printout)
+
+def cost_ID_for_printout(model):
+    return model.I_ID_printOut == sum(
+        model.Node_Probability[n] * model.Intraday_Price[n, t] * (
+            model.Activation_Factor_ID_Up[n, t] * model.x_ID_buy[p, t]
+            - model.Activation_Factor_ID_Dwn[n, t] * model.x_ID_sell[p, t]
+        )
+        for t in model.Time
+        for s in model.Period
+        for (n, stage) in model.Nodes_in_stage if stage == s
+        for (n_, p) in model.Parent_Node if n_ == n
+    )
+
+model.IDCostPrintout = pyo.Constraint(rule=cost_ID_for_printout)
+
+def cost_opex_for_printout(model):
+    return model.I_OPEX_printOut == sum(
+        model.Node_Probability[n] * (
+            sum(
+                model.y_activity[n, t, i, o] * (
+                    model.cost_activity[n, t, i, o] + model.Carbon_Intensity[i, o] * model.Cost_Emission
+                )
+                for (i, e, o) in model.TechnologyToEnergyCarrier
+            )
+            - sum(
+                model.cost_activity[n, t, i, o] * model.y_activity[n, t, i, o]
+                for (i, e, o) in model.EnergyCarrierToTechnology
+            )
+            + sum(
+                model.Cost_Battery[b] * model.q_discharge[n, t, b]
+                for b in model.FlexibleLoad
+            )
+            + sum(
+                model.Cost_LS[e] * model.Dwn_Shift[n, t, e]
+                for e in model.EnergyCarrier
+            )
+        )
+        for t in model.Time
+        for s in model.Period
+        for (n, stage) in model.Nodes_in_stage if stage == s
+    )
+
+model.OPEXCostPrintout = pyo.Constraint(rule=cost_opex_for_printout)
+
+def real_time_import_cost_rule(model):
+    return model.RealTime_Import == sum(
+        model.Node_Probability[n] *
+        model.y_activity[n, t, "Power_Grid", 3] *
+        model.cost_activity[n, t, "Power_Grid", 3]
+        for (n, stage) in model.Nodes_in_stage
+        for t in model.Time
+        if (n, t, "Power_Grid", 3) in model.y_activity and (n, t, "Power_Grid", 3) in model.cost_activity
+    )
+model.RealTimeImportCostConstraint = pyo.Constraint(rule=real_time_import_cost_rule)
+
+def real_time_export_revenue_rule(model):
+    return model.RealTime_Export == - sum(
+        model.Node_Probability[n] *
+        model.y_activity[n, t, "Power_Grid", 4] *
+        model.cost_activity[n, t, "Power_Grid", 4]
+        for (n, stage) in model.Nodes_in_stage
+        for t in model.Time
+        if (n, t, "Power_Grid", 4) in model.y_activity and (n, t, "Power_Grid", 4) in model.cost_activity
+    )
+model.RealTimeExportRevenueConstraint = pyo.Constraint(rule=real_time_export_revenue_rule)
+
+def dummyfuel_utilization_rule(model):
+    return model.Dummy_Grid_utilization == sum(
+        model.Node_Probability[n] *
+        model.y_in[n, t, "Dummy_Grid", "DummyFuel", o]
+        for (n, stage) in model.Nodes_in_stage
+        for t in model.Time
+        for o in model.Mode_of_operation
+        if (n, t, "Dummy_Grid", "DummyFuel", o) in model.y_in
+    )
+model.DummyFuelUtilizationConstraint = pyo.Constraint(rule=dummyfuel_utilization_rule)
+
+
+########################################################################################################
+########################################################################################################
 
 ###########################################
 ############## ENERGY BALANCE #############
@@ -1123,7 +1259,7 @@ def save_results_to_excel(model_instance, run_label, target_folder, max_rows_per
 
     with pd.ExcelWriter(full_path, engine="xlsxwriter") as writer:
         for var in model_instance.component_objects(pyo.Var, active=True):
-            if var.name not in ["v_new_tech", "v_new_bat", "Not_Supplied_Energy"]:
+            if var.name not in ["v_new_tech", "v_new_bat", "Not_Supplied_Energy", "I_inv", "I_GT", "I_cap_bid_printOut", "I_loadShedding", "I_activation_printOut", "I_DA_printOut", "I_ID_printOut", "I_OPEX_printOut"]:
                 continue
             var_name = var.name
             var_data = []
@@ -1169,7 +1305,21 @@ objective_scaled_to_year = (objective_value / num_days) * 365
 investment_cost = pyo.value(our_model.I_inv)
 investment_cost_scaled_to_year = (investment_cost/num_days) * 365
 loadShedding_cost = pyo.value(our_model.I_loadShedding)
-loadShedding_cost_scaled_to_year = (investment_cost/num_days) * 365
+loadShedding_cost_scaled_to_year = (loadShedding_cost/num_days) * 365
+
+Revenue_capacity_market = pyo.value(our_model.I_cap_bid_printOut)
+Revenue_activation_market = pyo.value(our_model.I_activation_printOut)
+Cost_DA_market = pyo.value(our_model.I_DA_printOut)
+Cost_ID_market = pyo.value(our_model.I_ID_printOut)
+OPEX_cost = pyo.value(our_model.I_OPEX_printOut)
+GridTariff_cost = pyo.value(our_model.I_GT)
+
+
+Imbalance_cost_import = pyo.value(our_model.RealTime_Import)
+Imbalance_cost_export = pyo.value(our_model.RealTime_Export)
+DummyFuel_utilization = pyo.value(our_model.Dummy_Grid_utilization)
+
+
 
 if case != "max_out":
     investment_cost_for_out_of_sample = (pyo.value(our_model.I_inv) / num_days) * 5
@@ -1255,11 +1405,30 @@ if case != "max_out":
     Number of Nodes: {num_Nodes}
     Objective Value: {objective_value:.2f}
     Investment Cost (tech+bat): {investment_cost:.2f}
-    ----------------------------------------------------
+    --------------------------------------------------------------------------
     SCALED TO YEARLY COSTS:
-    ----------------------------------------------------
+    --------------------------------------------------------------------------
     Objective Value (scaled to yearly cost): {objective_scaled_to_year:.2f}
     Investment Cost (scaled to yearly cost): {investment_cost_scaled_to_year:.2f}
+
+    
+    ---------------- COST COMPONENT BREAKDOWN: --------------------------------
+    Component                        Value (EUR)     Contribution (% of Obj.)
+    ---------------------------------------------------------------------------
+    Revenue - Capacity Market      {Revenue_capacity_market:>15,.2f}      {Revenue_capacity_market / objective_value * 100:>8.2f}%
+    Revenue - Activation Market    {Revenue_activation_market:>15,.2f}      {Revenue_activation_market / objective_value * 100:>8.2f}%
+    Cost    - Day-Ahead Market     {Cost_DA_market:>15,.2f}      {Cost_DA_market / objective_value * 100:>8.2f}%
+    Cost    - Intraday Market      {Cost_ID_market:>15,.2f}      {Cost_ID_market / objective_value * 100:>8.2f}%
+    OPEX                            {OPEX_cost:>15,.2f}      {OPEX_cost / objective_value * 100:>8.2f}%
+    Grid Tariff                     {GridTariff_cost:>15,.2f}      {GridTariff_cost / objective_value * 100:>8.2f}%
+    Load Shedding                   {loadShedding_cost:>15,.2f}      {loadShedding_cost / objective_value * 100:>8.2f}%
+    Investment                      {investment_cost:>15,.2f}      {investment_cost / objective_value * 100:>8.2f}%
+    ---------------------------------------------------------------------------
+
+    ---------------------- DIV ---------------------------------
+    Imbalance cost related to Real-time adjustment import: {Imbalance_cost_import:.2f}
+    Imbalance cost related to Real-time adjustment export: {Imbalance_cost_export:.2f}
+    Total DummyFuel used by Dummy Grid: {DummyFuel_utilization:,.2f}
     """
 
 
@@ -1300,6 +1469,25 @@ else:
     Objective Value (scaled to yearly cost): {objective_scaled_to_year:.2f}
     Objective value incl. investment cost (scaled to yearly cost):{objective_scaled_to_year + investment_cost_scaled_to_year_for_out_of_sample:.2f}
     Load shedding cost (scaled to yearly cost): {loadShedding_cost_scaled_to_year:.2f}
+
+    
+    ---------------- COST COMPONENT BREAKDOWN INCL. INV-COST FROM IN-SAMPLE: -
+    Component                        Value (EUR)     Contribution (% of Obj.)
+    --------------------------------------------------------------------------
+    Revenue - Capacity Market      {Revenue_capacity_market:>15,.2f}      {Revenue_capacity_market / (objective_value + investment_cost_for_out_of_sample) * 100:>8.2f}%
+    Revenue - Activation Market    {Revenue_activation_market:>15,.2f}      {Revenue_activation_market / (objective_value + investment_cost_for_out_of_sample) * 100:>8.2f}%
+    Cost    - Day-Ahead Market     {Cost_DA_market:>15,.2f}      {Cost_DA_market / (objective_value + investment_cost_for_out_of_sample) * 100:>8.2f}%
+    Cost    - Intraday Market      {Cost_ID_market:>15,.2f}      {Cost_ID_market / (objective_value + investment_cost_for_out_of_sample) * 100:>8.2f}%
+    OPEX                            {OPEX_cost:>15,.2f}      {OPEX_cost / (objective_value + investment_cost_for_out_of_sample) * 100:>8.2f}%
+    Grid Tariff                     {GridTariff_cost:>15,.2f}      {GridTariff_cost / (objective_value + investment_cost_for_out_of_sample) * 100:>8.2f}%
+    Load Shedding                   {loadShedding_cost:>15,.2f}      {loadShedding_cost / (objective_value + investment_cost_for_out_of_sample) * 100:>8.2f}%
+    Investment                      {investment_cost_for_out_of_sample:>15,.2f}      {investment_cost_for_out_of_sample / (objective_value + investment_cost_for_out_of_sample) * 100:>8.2f}%
+    -----------------------------------------------------------------------------
+
+    ---------------------- DIV ---------------------------------
+    Imbalance cost related to Real-time adjustment import: {Imbalance_cost_import:.2f}
+    Imbalance cost related to Real-time adjustment export: {Imbalance_cost_export:.2f}
+    Total DummyFuel used by Dummy Grid: {DummyFuel_utilization:,.2f}
     """
 
 case_and_objective_path = os.path.join(result_folder, f"case_and_objective_info_{'out' if case == 'max_out' else 'in'}.txt")
@@ -1387,15 +1575,27 @@ if case in ["wide", "deep", "max_in", "git_push"]:
     print("\n➡️  Running out-of-sample test for 'max_out' case...\n")
     
     # 1. Update parameter files into the Out_of_sample_test folder
-    out_sample_folder = os.path.join(base_dir, "Out_of_sample_test")
-    write_updated_initial_parameters(our_model, out_sample_folder)
+    if "Pulp" in excel_path:
+        out_sample_folder = os.path.join(base_dir, "Out_of_sample_pulp")
+        write_updated_initial_parameters(our_model, out_sample_folder)
 
-    import subprocess
-    main_abs = os.path.join(base_dir, "main.py")
-    subprocess.run(
-        ["python", main_abs, "--year", str(year), "--case", "max_out", "--cluster", "season", "--file", filenumber],
-        cwd=out_sample_folder
-    )
+        import subprocess
+        main_abs = os.path.join(base_dir, "main.py")
+        subprocess.run(
+            ["python", main_abs, "--year", str(year), "--case", "max_out", "--cluster", "season", "--industry", "pulp", "--file", filenumber],
+            cwd=out_sample_folder
+        )
+    elif "Aluminum" in excel_path:
+        out_sample_folder = os.path.join(base_dir, "Out_of_sample_alu")
+        write_updated_initial_parameters(our_model, out_sample_folder)
+
+        import subprocess
+        main_abs = os.path.join(base_dir, "main.py")
+        subprocess.run(
+            ["python", main_abs, "--year", str(year), "--case", "max_out", "--cluster", "season", "--industry", "alu", "--file", filenumber],
+            cwd=out_sample_folder
+        )
+
 
 
 """
