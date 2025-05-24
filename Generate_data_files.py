@@ -529,14 +529,31 @@ def run_everything(excel_path, instance, year, cluster, num_branches_to_firstSta
 
     # Handle cluster types
     if cluster == "random":
-        valid_days = list(day_data_map.keys())  # all months
+        parent_month_mapping = {
+            1: [1,2,3,4, 5, 6, 7, 8, 9, 10, 11, 12],
+            2: [1, 2, 3,4,5,6,7,8,9, 10, 11, 12],
+        }
+
+        
 
         for parent, child_nodes in mapping_converted.items():
+            allowed_months = parent_month_mapping.get(parent, [1, 2, 3])
+            valid_days = [d for d in day_data_map if d[0] in allowed_months]
+
+            if not valid_days:
+                raise ValueError(f"No valid historical days for months {allowed_months} in parent group {parent}")
+
             all_nodes = [parent] + child_nodes
             for node in all_nodes:
                 node_to_day[node] = random.choice(valid_days)
 
         for node in range(1, num_firstStageNodes + 1):
+            allowed_months = parent_month_mapping.get(node, [1, 2, 3])
+            valid_days = [d for d in day_data_map if d[0] in allowed_months]
+
+            if not valid_days:
+                raise ValueError(f"No valid days for first-stage node {node} in months {allowed_months}")
+
             node_to_day[node] = random.choice(valid_days)
 
     elif cluster == "season":
