@@ -1113,10 +1113,26 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 result_folder = os.path.join(base_dir, "Results", f"Results_{filenumber}")
 os.makedirs(result_folder, exist_ok=True)
 
-# Create a subfolder for input data.
-input_data_folder = os.path.join(result_folder, "input_data")
-os.makedirs(input_data_folder, exist_ok=True)
+if case != "max_out":
+    input_data_folder = os.path.join(result_folder, "input_data")
+    os.makedirs(input_data_folder, exist_ok=True)
+    
+    # === Copy input files only for in-sample run ---
+    input_extensions = (".tab", ".xlsx", ".csv", ".dat")
+    for fname in os.listdir("."):
+        if os.path.isfile(fname) and not fname.endswith(".py") and fname.endswith(input_extensions):
+            shutil.copy2(fname, os.path.join(input_data_folder, fname))
+else:
+    # In out-of-sample run, do not change or recreate the input_data folder.
+    input_data_folder = None
+    print("Out-of-sample run: skipping input data folder creation and update.")
 
+print("✅ Created folders:")
+print("  Results:", os.path.exists(result_folder))
+if input_data_folder is not None:
+    print("  Input data:", os.path.exists(input_data_folder))
+else:
+    print("  Input data: Not created")
 
 # Create results folder using a fixed base directory
 #result_folder = os.path.join(base_dir, "Results", f"Results_{filenumber}")
@@ -1169,11 +1185,6 @@ print("  Results:", os.path.exists(result_folder))
 print("  Input data:", os.path.exists(input_data_folder))
 
 # === Copy input files ===
-input_extensions = (".tab", ".xlsx", ".csv", ".dat")
-for fname in os.listdir("."):
-    if os.path.isfile(fname) and not fname.endswith(".py") and fname.endswith(input_extensions):
-        shutil.copy2(fname, os.path.join(input_data_folder, fname))
-
 # === Solve model ===
 start_time = time.time()
 results = opt.solve(our_model, tee=True)
