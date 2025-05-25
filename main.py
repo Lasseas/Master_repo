@@ -459,7 +459,6 @@ model.I_OPEX = pyo.Var(model.Nodes, model.Time)
 
 #For printout
 model.I_cap_bid_printOut = pyo.Var()
-model.I_loadShedding = pyo.Var()
 model.I_activation_printOut = pyo.Var()
 model.I_DA_printOut = pyo.Var()
 model.I_ID_printOut = pyo.Var()
@@ -558,8 +557,16 @@ model.OPEXCost = pyo.Constraint(model.Nodes_in_stage, model.Time, rule=cost_opex
 ########################### FOR UTSKRIFT AV DE ULIKE OBJEKTIVKOSTNADENE #################################
 ################################ IKKE LAGT TIL I OBJETIVFUNKSJONEN ######################################
 #########################################################################################################
+
 def cost_load_shedding_for_printout(model):
-    return model.I_loadShedding == sum(sum(sum(model.Node_Probability[n] * 10_000 * model.Not_Supplied_Energy[n, t, e] for (n,s) in model.Nodes_in_stage if s == model.Period) for t in model.Time) for e in model.EnergyCarrier)
+    return model.I_loadShedding == sum(
+        model.Node_Probability[n] * 10_000 * model.Not_Supplied_Energy[n, t, e]
+        for (n, s) in model.Nodes_in_stage
+        for t in model.Time
+        for e in model.EnergyCarrier
+        if s in model.Period  
+    )
+
 model.CostLoadShedding_printout = pyo.Constraint(rule=cost_load_shedding_for_printout)
 
 # I_Inv og I_GT hentes direkte
@@ -1115,8 +1122,8 @@ result_folder = os.path.join(base_dir, "Results", f"Results_{filenumber}")
 os.makedirs(result_folder, exist_ok=True)
 
 # Create a subfolder for input data.
-input_data_folder = os.path.join(result_folder, "input_data")
-os.makedirs(input_data_folder, exist_ok=True)
+#input_data_folder = os.path.join(result_folder, "input_data")
+#os.makedirs(input_data_folder, exist_ok=True)
 
 
 # Create results folder using a fixed base directory
@@ -1167,13 +1174,13 @@ opt.options['LogFile'] = logfile_temp
 
 print("✅ Created folders:")
 print("  Results:", os.path.exists(result_folder))
-print("  Input data:", os.path.exists(input_data_folder))
+#print("  Input data:", os.path.exists(input_data_folder))
 
 # === Copy input files ===
-input_extensions = (".tab", ".xlsx", ".csv", ".dat")
-for fname in os.listdir("."):
-    if os.path.isfile(fname) and not fname.endswith(".py") and fname.endswith(input_extensions):
-        shutil.copy2(fname, os.path.join(input_data_folder, fname))
+#input_extensions = (".tab", ".xlsx", ".csv", ".dat")
+#for fname in os.listdir("."):
+#    if os.path.isfile(fname) and not fname.endswith(".py") and fname.endswith(input_extensions):
+#        shutil.copy2(fname, os.path.join(input_data_folder, fname))
 
 # === Solve model ===
 start_time = time.time()
@@ -1497,7 +1504,7 @@ with open(case_and_objective_path, "w") as f:
 
 print("Working directory:", os.getcwd())
 print("Results folder will be:", result_folder)
-print("Input folder will be:", input_data_folder)
+#print("Input folder will be:", input_data_folder)
 
 
 
