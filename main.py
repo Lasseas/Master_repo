@@ -25,8 +25,8 @@ from Generate_data_files import run_everything
 parser = argparse.ArgumentParser(description="Run model instance")
 #parser.add_argument("--instance", type=int, required=True, help="Instance number (e.g., 1–5)")
 parser.add_argument("--year", type=int, required=True, help="Year (e.g., 2025 or 2050)")
-parser.add_argument("--case", type=str, required=True, choices=["wide", "deep", "max_in", "max_out", "git_push"], help="Specify case type")
-parser.add_argument("--cluster", type=str, required=True, choices=["random", "season", "demand"], help="Specify case type")
+parser.add_argument("--case", type=str, required=True, choices=["small", "wide", "deep", "max_in", "max_out", "git_push"], help="Specify case type")
+parser.add_argument("--cluster", type=str, required=True, choices=["random", "season", "guided"], help="Specify case type")
 parser.add_argument("--industry", type=str, required=True, choices = ["pulp", "alu"], help="Specify industry type")
 parser.add_argument("--file", type=str, required=True, help="Path to the Result file")
 args = parser.parse_args()
@@ -52,6 +52,7 @@ else:
 
 # Define branch structures for each case type
 case_configs = {
+    "small": (2, 3, 4, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
     "wide": (2, 30, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
     "deep": (2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0),
     "max_in":  (2, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0),
@@ -1579,7 +1580,7 @@ def write_updated_initial_parameters(model_instance, folder_path):
 #out_of_sample_folder = "Out_of_sample_results"
 write_updated_initial_parameters(our_model, result_folder)
 
-if case in ["wide", "deep", "max_in", "git_push"]:
+if case in ["small", "wide", "deep", "max_in", "git_push"]:
     print("\n➡️  Running out-of-sample test for 'max_out' case...\n")
     
     # 1. Update parameter files into the Out_of_sample_test folder

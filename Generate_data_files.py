@@ -489,7 +489,17 @@ def run_everything(excel_path, instance, year, cluster, num_branches_to_firstSta
         parent_mapping = dict(zip(df["Node"], df["Parent"]))
         
         return parent_mapping
+    
 
+
+    def invert_parent_mapping(parent_mapping):
+        inverted = {}
+        for node, parent in parent_mapping.items():
+            inverted.setdefault(parent, []).append(node)
+        return inverted
+
+    
+    
 
     # ----------------- HISTORICAL PRICE DATA HANDLING -----------------
 
@@ -521,148 +531,305 @@ def run_everything(excel_path, instance, year, cluster, num_branches_to_firstSta
     #####################################################################################
 
     # Extend parent_month_mapping assignment to parent nodes as well
+
+
+        # === Define required days to ensure inclusion ===
+    
+    
+ # Assume these mappings are built earlier:
+#   mapping_parents = invert_parent_mapping( create_parent_mapping("Set_ParentCoupling.tab") )
+#   mapping_converted = {int(k): [int(x) for x in v] for k, v in 
+#                          map_children_to_parents_from_file("Set_ParentCoupling.tab").items()}
+
+        # And parent_month_mapping is defined as (for 2 seasons):
+        # --- Define allowed months for each season ---
+   
+    # Assume these dictionaries exist:
+# mapping_parents = {1: [3, 4], 2: [5, 6], 3: [7, 8], 4: [9, 10], 5: [11, 12], 6: [13, 14]}
+# mapping_seasonal = {1: [3, 4, 7, 8, 9, 10], 2: [5, 6, 11, 12, 13, 14]}
+# And required_days = [(1,5), (1,8), (1,9), (1,16), (1,18), (1,19), (2,9)]
+# Also day_data_map is defined and parent_month_mapping as below:
+
+    # Example usage:
+    original_mapping = create_parent_mapping("Set_ParentCoupling.tab")
+    mapping_parents = invert_parent_mapping(original_mapping)
+    print("mapping_parents", mapping_parents)
+
+    mapping_seasonal = mapping_converted
+
+    print("mapping_seasonal", mapping_seasonal)
+    
+
+    parent_month_mapping = {
+        1: [4, 5, 6, 7, 8, 9],      # summer
+        2: [1, 2, 3, 10, 11, 12]     # winter
+    }
+    required_days = [(1, 5), (1, 8), (1, 9), (1, 16), (1, 18), (1, 19), (2, 9)]
+
+
+
+    # … assume mapping_parents, mapping_seasonal, parent_month_mapping,
+    #    day_data_map and required_days are already defined …
+
     node_to_day = {}
 
-    # Handle cluster types
+    
+
+    # ─── your pre-existing data structures ────────────────────────────
+    # mapping_parents  = {1:[3,4], 2:[5,6], 3:[7,8], 4:[9,10], 5:[11,12], 6:[13,14]}
+    # mapping_seasonal = {1:[…summer nodes…], 2:[…winter nodes…]}
+    # parent_month_mapping = {
+    #     1: [4,5,6,7,8,9],      # summer
+    #     2: [1,2,3,10,11,12],   # winter
+    # }
+    # required_days    = [(1,5),(1,8),(1,9),(1,16),(1,18),(1,19),(2,9)]
+    # day_data_map     = { (m,d): pd.DataFrame with an "MT" column … }
+
+    """
+
+    if cluster in ["random", "season"]:
+        # ── 1) ASSIGN season roots + their children ─────────────────
+        for season, nodes in mapping_seasonal.items():
+            allowed = parent_month_mapping.get(season, list(range(1,13)))
+            valid_days = [d for d in day_data_map if d[0] in allowed]
+            
+            node_to_day[season] = random.choice(valid_days)
+            for n in nodes:
+                node_to_day[n] = random.choice(valid_days)
+
+        # ── 2) INJECT one required_day into a random winter node ─────
+        available = [d for d in required_days if d in day_data_map]
+        if not available:
+            print("⚠️ No required_days are in day_data_map!")
+        else:
+            winter_nodes   = mapping_seasonal[2]
+            inj_node       = random.choice(winter_nodes)
+            inj_day        = random.choice(available)
+            node_to_day[inj_node] = inj_day
+            print(f"⛄ [random/season] Injected required day {inj_day} into node {inj_node}")
+    """
     if cluster == "random":
         parent_month_mapping = {
-            1: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-            2: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+        1: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+        2: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
         }
 
-        
-
-        for parent, child_nodes in mapping_converted.items():
-            allowed_months = parent_month_mapping.get(parent, [1, 2, 3])
-            valid_days = [d for d in day_data_map if d[0] in allowed_months]
-
-            if not valid_days:
-                raise ValueError(f"No valid historical days for months {allowed_months} in parent group {parent}")
-
-            all_nodes = [parent] + child_nodes
-            for node in all_nodes:
-                node_to_day[node] = random.choice(valid_days)
-
-        for node in range(1, num_firstStageNodes + 1):
-            allowed_months = parent_month_mapping.get(node, [1, 2, 3])
-            valid_days = [d for d in day_data_map if d[0] in allowed_months]
-
-            if not valid_days:
-                raise ValueError(f"No valid days for first-stage node {node} in months {allowed_months}")
-
-            node_to_day[node] = random.choice(valid_days)
-
-    elif cluster == "season":
-        parent_month_mapping = {
-            1: [4, 5, 6, 7, 8, 9],
-            2: [1, 2, 3, 10, 11, 12],
-        }
-
-        for parent, child_nodes in mapping_converted.items():
-            allowed_months = parent_month_mapping.get(parent, [1, 2, 3])
-            valid_days = [d for d in day_data_map if d[0] in allowed_months]
-
-            if not valid_days:
-                raise ValueError(f"No valid historical days for months {allowed_months} in parent group {parent}")
-
-            all_nodes = [parent] + child_nodes
-            for node in all_nodes:
-                node_to_day[node] = random.choice(valid_days)
-
-        for node in range(1, num_firstStageNodes + 1):
-            allowed_months = parent_month_mapping.get(node, [1, 2, 3])
-            valid_days = [d for d in day_data_map if d[0] in allowed_months]
-
-            if not valid_days:
-                raise ValueError(f"No valid days for first-stage node {node} in months {allowed_months}")
-
-            node_to_day[node] = random.choice(valid_days)
-
-    
-    
-    elif cluster == "demand":
-        parent_month_mapping = {
-            1: [4, 5, 6, 7, 8, 9],
-            2: [1, 2, 3, 10, 11, 12],
-        }
+        all_nodes = set()
+        for parent, children in mapping_converted.items():
+            all_nodes.update([parent] + children)
+        all_nodes.update(range(1, num_firstStageNodes + 1))
 
         max_attempts = 1000
-        mt_tolerance_percent = 10
-        tolerance_fraction = mt_tolerance_percent / 100
+        success = False
 
-        for parent, child_nodes in mapping_converted.items():
-            allowed_months = parent_month_mapping.get(parent, [1, 2, 3])
-            valid_days = [d for d in day_data_map if d[0] in allowed_months]
+        for attempt in range(max_attempts):
+            temp_node_to_day = {}
+            failed_node = None
 
-            if not valid_days:
-                raise ValueError(f"No valid seasonal days for parent {parent}")
+            try:
+                for parent, child_nodes in mapping_converted.items():
+                    allowed_months = parent_month_mapping.get(parent, [1, 2, 3])
+                    valid_days = [d for d in day_data_map if d[0] in allowed_months]
 
-            if len(child_nodes) == 0:
-                continue  # skip empty sibling groups
+                    if not valid_days:
+                        failed_node = f"Parent group {parent}"
+                        raise ValueError()
 
-            success = False
-            for _ in range(max_attempts):
-                first_child = random.choice(child_nodes)
-                base_day = random.choice(valid_days)
-                base_peak = day_data_map[base_day]["MT"].max()
+                    for node in [parent] + child_nodes:
+                        temp_node_to_day[node] = random.choice(valid_days)
 
-                lower_bound = base_peak * (1 - tolerance_fraction)
-                upper_bound = base_peak * (1 + tolerance_fraction)
+                for node in range(1, num_firstStageNodes + 1):
+                    if node in temp_node_to_day:
+                        continue
+                    allowed_months = parent_month_mapping.get(node, [1, 2, 3])
+                    valid_days = [d for d in day_data_map if d[0] in allowed_months]
 
-                # Valid sibling days: within range AND not equal to base_day
-                valid_sibling_days = [
-                    d for d in valid_days
-                    if d != base_day and lower_bound <= day_data_map[d]["MT"].max() <= upper_bound
-                ]
+                    if not valid_days:
+                        failed_node = f"First-stage node {node}"
+                        raise ValueError()
 
-                print(f"\n👨‍👩‍👧 Parent {parent} — base child: {first_child}, base day: {base_day}, peak MT: {base_peak:.2f}")
-                print(f"Allowed peak MT range: [{lower_bound:.2f}, {upper_bound:.2f}]")
-                print(f"Found {len(valid_sibling_days)} valid sibling days within range.")
-                if len(valid_sibling_days) < len(child_nodes) - 1:
-                    print(f"❗ Not enough unique days for siblings ({len(child_nodes)-1} needed). Will retry or fallback.")
+                    temp_node_to_day[node] = random.choice(valid_days)
 
-                # Pick sibling days
-                if len(valid_sibling_days) >= len(child_nodes) - 1:
-                    sampled_sibling_days = random.sample(valid_sibling_days, len(child_nodes) - 1)
-                elif len(valid_sibling_days) >= 1:
-                    sampled_sibling_days = random.choices(valid_sibling_days, k=len(child_nodes) - 1)
-                    print(f"⚠️  Fallback: Reusing some days among siblings in parent group {parent}")
-                else:
-                    continue  # Retry — no days available at all
+            except ValueError:
+                print(f"Attempt {attempt + 1}: No valid days found for {failed_node} (allowed months: {allowed_months})")
+                continue  # try again
 
-                # ✅ Assign days now that we have a viable set
-                node_to_day[first_child] = base_day
-                remaining_children = [n for n in child_nodes if n != first_child]
-                for node, day in zip(remaining_children, sampled_sibling_days):
-                    node_to_day[node] = day
-
-                node_to_day[parent] = random.choice(valid_days)  # Optional parent assignment
-
+            included_required_days = [day for day in temp_node_to_day.values() if day in required_days]
+           
+            if included_required_days:
+                node_to_day = temp_node_to_day
                 success = True
+                print(f"[Success after {attempt + 1} attempts] ✅ Required day found!")
+                print("Included required day(s):", included_required_days)
                 break
 
-            if not success:
-                raise ValueError(f"❌ Could not assign days to child nodes of parent {parent} with MT peak tolerance ±{mt_tolerance_percent}%")
+        if not success:
+            raise RuntimeError(f"❌ Failed to sample data including any required day after {max_attempts} attempts.")
+       
+    elif cluster == "season":
+        parent_month_mapping = {
+            1: [4, 5, 6, 7, 8, 9],       # Spring/Summer
+            2: [1, 2, 3, 10, 11, 12],    # Winter
+        }
 
-        # First-stage nodes: seasonal logic
-        for node in range(1, num_firstStageNodes + 1):
-            allowed_months = parent_month_mapping.get(node, [1, 2, 3])
-            valid_days = [d for d in day_data_map if d[0] in allowed_months]
+        all_nodes = set()
+        for parent, children in mapping_converted.items():
+            all_nodes.update([parent] + children)
+        all_nodes.update(range(1, num_firstStageNodes + 1))
 
-            if not valid_days:
-                raise ValueError(f"No valid days for first-stage node {node}")
+        max_attempts = 1000
+        success = False
 
-            node_to_day[node] = random.choice(valid_days)
+        for attempt in range(max_attempts):
+            temp_node_to_day = {}
+            failed_node = None
+
+            try:
+                for parent, child_nodes in mapping_converted.items():
+                    allowed_months = parent_month_mapping.get(parent, [1, 2, 3])
+                    valid_days = [d for d in day_data_map if d[0] in allowed_months]
+
+                    if not valid_days:
+                        failed_node = f"Parent group {parent}"
+                        raise ValueError()
+
+                    for node in [parent] + child_nodes:
+                        temp_node_to_day[node] = random.choice(valid_days)
+
+                for node in range(1, num_firstStageNodes + 1):
+                    if node in temp_node_to_day:
+                        continue
+                    allowed_months = parent_month_mapping.get(node, [1, 2, 3])
+                    valid_days = [d for d in day_data_map if d[0] in allowed_months]
+
+                    if not valid_days:
+                        failed_node = f"First-stage node {node}"
+                        raise ValueError()
+
+                    temp_node_to_day[node] = random.choice(valid_days)
+
+            except ValueError:
+                print(f"[Attempt {attempt + 1}] ❌ No valid days found for {failed_node} (allowed months: {allowed_months})")
+                continue
+
+            # Normalize and check for required days
+            included_required_days = [
+                (int(day[0]), int(day[1]))
+                for day in temp_node_to_day.values()
+                if (int(day[0]), int(day[1])) in required_days
+            ]
+
+            if included_required_days:
+                node_to_day = temp_node_to_day
+                success = True
+                print(f"[Success after {attempt + 1} attempts] ✅ Required day found!")
+                print("Included required day(s):", included_required_days)
+                print("Execution continued from: <required day inclusion check in 'season' cluster>")
+                break
+
+        if not success:
+            raise RuntimeError(f"❌ Failed to sample data including any required day after {max_attempts} attempts.")
 
 
-    # Print assignment (month and day) for traceability
-    print("\n📅 Random day selected for each node:")
+    elif cluster == "guided":
+        # ── A) ASSIGN season roots + their children ─────────────────
+        for season, nodes in mapping_seasonal.items():
+            allowed = parent_month_mapping.get(season, list(range(1,13)))
+            valid_days = [d for d in day_data_map if d[0] in allowed]
+            
+            node_to_day[season] = random.choice(valid_days)
+            for n in nodes:
+                node_to_day[n] = random.choice(valid_days)
+
+        # ── B) INJECT one required_day into a random winter node ─────
+        available = [d for d in required_days if d in day_data_map]
+        injected_parent = None
+
+        if not available:
+            print("⚠️ No required_days are in day_data_map!")
+        else:
+            winter_nodes   = mapping_seasonal[2]
+            inj_node       = random.choice(winter_nodes)
+            inj_day        = random.choice(available)
+            node_to_day[inj_node] = inj_day
+            print(f"⛄ [guided]  Injected required day {inj_day} into node {inj_node}")
+
+            # find its parent
+            injected_parent = next(
+                (p for p, kids in mapping_parents.items() if inj_node in kids),
+                None
+            )
+
+            if injected_parent is not None:
+                # find which season that parent belongs to
+                season_of_parent = next(
+                    s for s,nodes in mapping_seasonal.items()
+                    if injected_parent == s or injected_parent in nodes
+                )
+                allowed = parent_month_mapping[season_of_parent]
+                valid_days = [d for d in day_data_map if d[0] in allowed]
+
+                # compute ±10% band around the injected day's MT peak
+                base_peak = day_data_map[inj_day]["MT"].max()
+                lo, hi = base_peak * 0.90, base_peak * 1.10
+                sibling_days = [
+                    d for d in valid_days
+                    if lo <= day_data_map[d]["MT"].max() <= hi
+                ]
+
+                # *** ONLY update the injected node’s siblings ***
+                siblings = [
+                    c for c in mapping_parents[injected_parent]
+                    if c != inj_node
+                ]
+                for sib in siblings:
+                    node_to_day[sib] = (
+                        random.choice(sibling_days)
+                        if sibling_days else
+                        random.choice(valid_days)
+                    )
+                print(f"🔧 [guided] Updated siblings of parent {injected_parent}: {siblings}")
+
+        # ── C) ENFORCE ±10% rule on all *other* parent groups ─────────
+        for parent, children in mapping_parents.items():
+            if parent == injected_parent or not children:
+                continue
+
+            # pick season for this group
+            parent_season = next(
+                (s for s,nodes in mapping_seasonal.items()
+                if parent == s or any(c in nodes for c in children)),
+                None
+            )
+            allowed = parent_month_mapping.get(parent_season, list(range(1,13)))
+            valid_days = [d for d in day_data_map if d[0] in allowed]
+
+            # first child is “base”
+            base_child = children[0]
+            base_day   = random.choice(valid_days)
+            node_to_day[base_child] = base_day
+
+            base_peak = day_data_map[base_day]["MT"].max()
+            lo, hi = base_peak * 0.90, base_peak * 1.10
+            sib_choices = [
+                d for d in valid_days
+                if d != base_day and lo <= day_data_map[d]["MT"].max() <= hi
+            ]
+
+            for sib in children[1:]:
+                node_to_day[sib] = (
+                    random.choice(sib_choices)
+                    if sib_choices else base_day
+                )
+
+        print("✅ Guided clustering with ±10% MT tolerance complete.")
+
+    # ─── FINAL OUTPUT ────────────────────────────────────────────────
+    print("\n📅 Selected day for each node:")
     for node in sorted(node_to_day):
         m, d = node_to_day[node]
-        print(f"Node {node}: Month = {m:02d}, Day = {d:02d}")
+        print(f"Node {node}: Month={m:02d}, Day={d:02d}")
 
-
-    # Extract dictionary for reference demand and prices 
 
     def extract_series_for_column(columns, node_to_day, day_data_map, all_keys=None, fill_zero_for_missing=True):
         """
@@ -765,13 +932,12 @@ def run_everything(excel_path, instance, year, cluster, num_branches_to_firstSta
     print(f"Average Capacity Up Price: {avg_capacity_up:.2f} EUR/MW")
     print(f"Average Capacity Down Price: {avg_capacity_down:.2f} EUR/MW")
 
-    # Preview one node per fuel
-    pprint.pprint({k: list(v.items())[:1] for k, v in ReferenceDemand.items()})
-    pprint.pprint({k: list(v.items())[:1] for k, v in Res_CapacityDwnVolume.items()})
-    pprint.pprint({k: list(v.items())[:1] for k, v in ID_Capacity_Buy_Volume.items()})
-
-
     parent_mapping = create_parent_mapping("Set_ParentCoupling.tab")
+
+    # Preview one node per fuel
+    #pprint.pprint({k: list(v.items())[:1] for k, v in ReferenceDemand.items()})
+    #pggint.pprint({k: list(v.items())[:1] for k, v in Res_CapacityDwnVolume.items()})
+    #pprjthgiprint({k: list(v.items())[:1] for k, v in ID_Capacity_Buy_Volume.items()})
 
     
 
