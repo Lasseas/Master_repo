@@ -566,8 +566,69 @@ def run_everything(excel_path, instance, year, cluster, num_branches_to_firstSta
     }
     required_days = [(1, 5), (1, 8), (1, 9), (1, 16), (1, 18), (1, 19), (2, 9)]
 
+   
+    required_days_high_diversed = [ #Above 700 peak
+    # January
+    (1, 4), (1, 5), (1, 8), (1, 9),
+    (1, 10), (1, 12), (1, 15), (1, 16),
+    (1, 18), (1, 19),
 
+    # February
+    (2, 8), (2, 9),
+    ]
 
+    required_days_low_diversed = [ #Below 250 peak
+    # May
+    (5, 1), (5, 2), (5, 3), (5, 13), (5, 14), (5, 15),
+    (5, 16), (5, 17), (5, 20), (5, 21), (5, 22), (5, 23),
+    (5, 24), (5, 27), (5, 28), (5, 29), (5, 30), (5, 31),
+
+    # June
+    (6, 3), (6, 4), (6, 5), (6, 11), (6, 12), (6, 17),
+    (6, 18), (6, 19), (6, 20), (6, 21), (6, 24), (6, 25),
+    (6, 26), (6, 27), (6, 28),
+
+    # July
+    (7, 1), (7, 2), (7, 3), (7, 8), (7, 9), (7, 10),
+    (7, 11), (7, 12), (7, 15), (7, 16), (7, 17), (7, 18),
+    (7, 19), (7, 22), (7, 23), (7, 24), (7, 25), (7, 26),
+    (7, 29), (7, 30), (7, 31),
+
+    # August
+    (8, 1), (8, 2), (8, 5), (8, 6), (8, 7), (8, 8),
+    (8, 9), (8, 12), (8, 13), (8, 14), (8, 15), (8, 16),
+    (8, 19), (8, 20), (8, 21), (8, 22), (8, 23), (8, 26),
+    (8, 27), (8, 28), (8, 29), (8, 30),
+
+    # September
+    (9, 3), (9, 4), (9, 5), (9, 6), (9, 9), (9, 10),
+    (9, 16), (9, 18), (9, 19), (9, 23), (9, 24), (9, 25),
+    ]
+
+    required_days_medium_diversed = [ #Between  450 and 550 peak
+    # January
+    (1, 24), (1, 25), (1, 26), (1, 30), (1, 31),
+
+    # February
+    (2, 5),  (2, 14), (2, 15), (2, 16), (2, 19),
+    (2, 20), (2, 21), (2, 26), (2, 27),
+
+    # March
+    (3, 4),  (3, 5),  (3, 6),  (3, 7),  (3, 8),
+    (3, 11), (3, 12), (3, 18), (3, 19), (3, 20),
+    (3, 25), (3, 26),
+
+    # April
+    (4, 3),  (4, 4),  (4, 5),  (4, 19),
+
+    # November
+    (11, 12), (11, 14), (11, 18), (11, 19), (11, 20),
+    (11, 28), (11, 29),
+
+    # December
+    (12, 3),  (12, 5),  (12, 6),  (12, 9),  (12, 13),
+    (12, 20), (12, 23), (12, 24), (12, 30), (12, 31),
+    ]
     # … assume mapping_parents, mapping_seasonal, parent_month_mapping,
     #    day_data_map and required_days are already defined …
 
@@ -823,6 +884,71 @@ def run_everything(excel_path, instance, year, cluster, num_branches_to_firstSta
                 )
 
         print("✅ Guided clustering with ±10% MT tolerance complete.")
+
+    
+    
+
+    elif cluster == "diversed":
+        # 1) Pre-filter required days that actually exist
+        highs   = [d for d in required_days_high_diversed   if d in day_data_map]
+        lows    = [d for d in required_days_low_diversed    if d in day_data_map]
+        mediums = [d for d in required_days_medium_diversed if d in day_data_map]
+
+        if not highs or not lows or not mediums:
+            raise RuntimeError("⚠️  One of the required_days_high/low/medium sets is empty!")
+
+        all_days = list(day_data_map.keys())
+
+        # 2) For each sibling set, assign high, low, medium in turn
+        for parent, children in mapping_parents.items():
+            # work on a mutable copy
+            remaining = children.copy()
+
+            # HIGH
+            if remaining:
+                c_high = random.choice(remaining)
+                day_high = random.choice(highs)
+                node_to_day[c_high] = day_high
+                remaining.remove(c_high)
+                print(f"[diversed] Parent {parent}: Node {c_high} ← HIGH {day_high}")
+
+            # LOW
+            if remaining:
+                c_low = random.choice(remaining)
+                day_low = random.choice(lows)
+                node_to_day[c_low] = day_low
+                remaining.remove(c_low)
+                print(f"[diversed] Parent {parent}: Node {c_low} ← LOW  {day_low}")
+
+            # MEDIUM
+            if remaining:
+                c_med = random.choice(remaining)
+                day_med = random.choice(mediums)
+                node_to_day[c_med] = day_med
+                remaining.remove(c_med)
+                print(f"[diversed] Parent {parent}: Node {c_med} ← MED  {day_med}")
+
+            # ANY LEFT: pure random
+            for c in remaining:
+                rand_day = random.choice(all_days)
+                node_to_day[c] = rand_day
+                print(f"[diversed] Parent {parent}: Node {c} ← RAND {rand_day}")
+
+        # 3) Finally fill every other node (including parents and any first-stage nodes)
+        all_nodes = set(mapping_parents.keys())
+        for kids in mapping_parents.values():
+            all_nodes.update(kids)
+        all_nodes.update(range(1, num_firstStageNodes + 1))
+
+        for node in sorted(all_nodes):
+            if node not in node_to_day:
+                node_to_day[node] = random.choice(all_days)
+
+        print("✅ Diversed clustering complete: each sibling set has one HIGH, one LOW, one MEDIUM (if ≥3), rest random.")
+
+
+    else:
+        raise ValueError(f"Unknown cluster type: {cluster}")
 
     # ─── FINAL OUTPUT ────────────────────────────────────────────────
     print("\n📅 Selected day for each node:")

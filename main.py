@@ -26,7 +26,7 @@ parser = argparse.ArgumentParser(description="Run model instance")
 #parser.add_argument("--instance", type=int, required=True, help="Instance number (e.g., 1–5)")
 parser.add_argument("--year", type=int, required=True, help="Year (e.g., 2025 or 2050)")
 parser.add_argument("--case", type=str, required=True, choices=["wide_small", "wide_medium", "wide_large", "deep_small", "deep_medium", "deep_large", "balanced_small", "balanced_medium", "balanced_large", "max_in", "max_out", "git_push"], help="Specify case type")
-parser.add_argument("--cluster", type=str, required=True, choices=["random", "season", "guided"], help="Specify case type")
+parser.add_argument("--cluster", type=str, required=True, choices=["random", "season", "guided", "diversed"], help="Specify case type")
 parser.add_argument("--industry", type=str, required=True, choices = ["pulp", "alu"], help="Specify industry type")
 parser.add_argument("--file", type=str, required=True, help="Path to the Result file")
 args = parser.parse_args()
@@ -63,7 +63,7 @@ case_configs = {
     "balanced_large": (2, 4, 4, 4, 4, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0), #1024 scenarioer
     "max_in":  (2, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0),
     "max_out":  (2, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-    "git_push": (2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    "git_push": (2, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 }
 
 (
