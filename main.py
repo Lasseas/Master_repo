@@ -25,7 +25,7 @@ from Generate_data_files import run_everything
 parser = argparse.ArgumentParser(description="Run model instance")
 #parser.add_argument("--instance", type=int, required=True, help="Instance number (e.g., 1–5)")
 parser.add_argument("--year", type=int, required=True, help="Year (e.g., 2025 or 2050)")
-parser.add_argument("--case", type=str, required=True, choices=["wide_small", "wide_medium", "wide_large", "deep_small", "deep_medium", "deep_large", "balanced_small", "balanced_medium", "balanced_large" "max_in", "max_out", "git_push"], help="Specify case type")
+parser.add_argument("--case", type=str, required=True, choices=["wide_small", "wide_medium", "wide_large", "deep_small", "deep_medium", "deep_large", "balanced_small", "balanced_medium", "balanced_large", "max_in", "max_out", "git_push"], help="Specify case type")
 parser.add_argument("--cluster", type=str, required=True, choices=["random", "season", "guided"], help="Specify case type")
 parser.add_argument("--industry", type=str, required=True, choices = ["pulp", "alu"], help="Specify industry type")
 parser.add_argument("--file", type=str, required=True, help="Path to the Result file")
