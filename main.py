@@ -25,7 +25,7 @@ from Generate_data_files import run_everything
 parser = argparse.ArgumentParser(description="Run model instance")
 #parser.add_argument("--instance", type=int, required=True, help="Instance number (e.g., 1–5)")
 parser.add_argument("--year", type=int, required=True, help="Year (e.g., 2025 or 2050)")
-parser.add_argument("--case", type=str, required=True, choices=["small", "wide", "deep", "max_in", "max_out", "git_push"], help="Specify case type")
+parser.add_argument("--case", type=str, required=True, choices=["wide_small", "wide_medium", "wide_large", "deep_small", "deep_medium", "deep_large", "balanced_small", "balanced_medium", "balanced_large" "max_in", "max_out", "git_push"], help="Specify case type")
 parser.add_argument("--cluster", type=str, required=True, choices=["random", "season", "guided"], help="Specify case type")
 parser.add_argument("--industry", type=str, required=True, choices = ["pulp", "alu"], help="Specify industry type")
 parser.add_argument("--file", type=str, required=True, help="Path to the Result file")
@@ -52,9 +52,15 @@ else:
 
 # Define branch structures for each case type
 case_configs = {
-    "small": (2, 3, 4, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-    "wide": (2, 30, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-    "deep": (2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0),
+    "wide_small": (2, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), #128 scenarioer
+    "wide_medium": (2, 16, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), #512 scenarioer
+    "wide_large": (2, 23, 23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), #1058 scenarioer
+    "deep_small": (2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0), #128 scenarioer
+    "deep_medium": (2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0), #512 scenarioer
+    "deep_large": (2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0), #1024 scenarioer
+    "balanced_small": (2, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), #128 scenarioer
+    "balanced_medium": (2, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), #512 scenarioer
+    "balanced_large": (2, 4, 4, 4, 4, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0), #1024 scenarioer
     "max_in":  (2, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0),
     "max_out":  (2, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0),
     "git_push": (2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
@@ -674,6 +680,7 @@ def real_time_export_revenue_rule(model):
         if (n, t, "Power_Grid", 4) in model.y_activity and (n, t, "Power_Grid", 4) in model.cost_activity
     )
 model.RealTimeExportRevenueConstraint = pyo.Constraint(rule=real_time_export_revenue_rule)
+
 
 def dummyfuel_utilization_rule(model):
     return model.Dummy_Grid_utilization == sum(
@@ -1580,7 +1587,7 @@ def write_updated_initial_parameters(model_instance, folder_path):
 #out_of_sample_folder = "Out_of_sample_results"
 write_updated_initial_parameters(our_model, result_folder)
 
-if case in ["small", "wide", "deep", "max_in", "git_push"]:
+if case in ["wide_small", "wide_medium", "wide_large", "deep_small", "deep_medium", "deep_large", "balanced_small", "balanced_medium", "balanced_large", "max_in", "git_push"]:
     print("\n➡️  Running out-of-sample test for 'max_out' case...\n")
     
     # 1. Update parameter files into the Out_of_sample_test folder
