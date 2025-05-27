@@ -1585,33 +1585,37 @@ def write_updated_initial_parameters(model_instance, folder_path):
 
 
 #out_of_sample_folder = "Out_of_sample_results"
-write_updated_initial_parameters(our_model, result_folder)
+#write_updated_initial_parameters(our_model, result_folder)
 
 if case in ["wide_small", "wide_medium", "wide_large", "deep_small", "deep_medium", "deep_large", "balanced_small", "balanced_medium", "balanced_large", "max_in", "git_push"]:
     print("\n➡️  Running out-of-sample test for 'max_out' case...\n")
     
-    # 1. Update parameter files into the Out_of_sample_test folder
+    # Determine the global out-of-sample folder based on industry
     if "Pulp" in excel_path:
-        out_sample_folder = os.path.join(base_dir, "Out_of_sample_pulp")
-        write_updated_initial_parameters(our_model, out_sample_folder)
-
-        import subprocess
-        main_abs = os.path.join(base_dir, "main.py")
-        subprocess.run(
-            ["python", main_abs, "--year", str(year), "--case", "max_out", "--cluster", "season", "--industry", "pulp", "--file", filenumber],
-            cwd=out_sample_folder
-        )
+        global_out_sample = os.path.join(base_dir, "Out_of_sample_pulp")
+        industry_flag = "pulp"
     elif "Aluminum" in excel_path:
-        out_sample_folder = os.path.join(base_dir, "Out_of_sample_alu")
-        write_updated_initial_parameters(our_model, out_sample_folder)
-
-        import subprocess
-        main_abs = os.path.join(base_dir, "main.py")
-        subprocess.run(
-            ["python", main_abs, "--year", str(year), "--case", "max_out", "--cluster", "season", "--industry", "alu", "--file", filenumber],
-            cwd=out_sample_folder
-        )
-
+        global_out_sample = os.path.join(base_dir, "Out_of_sample_alu")
+        industry_flag = "alu"
+    else:
+        raise ValueError("Unknown industry in excel_path.")
+    
+    # Create a local copy of the out-of-sample folder in the current run's result folder.
+    local_out_sample = os.path.join(result_folder, "Out_of_sample")
+    # Remove the destination folder if it already exists to make a clean copy.
+    if os.path.isdir(local_out_sample):
+        shutil.rmtree(local_out_sample)
+    shutil.copytree(global_out_sample, local_out_sample)
+    
+    # Update the parameter files inside the local copy.
+    write_updated_initial_parameters(our_model, local_out_sample)
+    
+    # Run out-of-sample test using the local copy folder, not the global one.
+    import subprocess
+    main_abs = os.path.join(base_dir, "main.py")
+    subprocess.run(
+        ["python", main_abs, "--year", str(year), "--case", "max_out", "--cluster", "season", "--industry", industry_flag, "--file", filenumber],
+        cwd=local_out_sample)
 
 
 """
