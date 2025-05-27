@@ -62,8 +62,8 @@ case_configs = {
     "balanced_medium": (2, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), #512 scenarioer
     "balanced_large": (2, 4, 4, 4, 4, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0), #1024 scenarioer
     "max_in":  (2, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-    "max_out":  (2, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-    "git_push": (2, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    "max_out":  (2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+    "git_push": (2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 }
 
 (
@@ -84,10 +84,19 @@ case_configs = {
     num_branches_to_fifteenthStage
 ) = case_configs[case]
 
+base_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Build the results folder name using filenumber.
+result_folder = os.path.join(base_dir, "Results", f"Results_{filenumber}")
+os.makedirs(result_folder, exist_ok=True)
+
 
 if case != "max_out":
+
     run_everything(
     excel_path,
+    result_folder,
+    filenumber,
     instance,
     year,
     cluster,
@@ -147,63 +156,6 @@ cost_activity = {
     "Dummy_Grid": {1: 0} #1 = Export
     }
 
-#####################################################################################
-################################ Ble for stor til pushe til git ######################
-################################## må genereres i solstorm ##########################
-#####################################################################################
-
-def generate_cost_activity(num_nodes, num_timesteps, cost_activity, filename="Par_ActivityCost.tab"):
-        def data_generator(chunk_size=10_000_000):
-            rows = []
-            count = 0
-            for node in range(3, num_nodes + 1):
-                for tech, mode_costs in cost_activity.items():
-                    for mode in mode_costs:
-                        for t in range(1, num_timesteps + 1):
-                            cost = mode_costs[mode]
-                            rows.append({
-                                "Node": node,
-                                "Time": t,
-                                "Technology": tech,
-                                "Operational_mode": mode,
-                                "Cost": cost
-                            })
-                            count += 1
-                            if count % chunk_size == 0:
-                                yield pd.DataFrame(rows)
-                                rows = []
-            if rows:
-                yield pd.DataFrame(rows)
-
-        make_tab_file(filename, data_generator())
-
-if case == "max_out":
-    generate_cost_activity(num_nodes = 7812, num_timesteps = 24, cost_activity = cost_activity)
-
-
-import os
-
-# Always resolve the tab file path relative to script's location
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-
-if case == "max_out":
-    if "Pulp" in excel_path:
-        tab_file_folder = os.path.join(SCRIPT_DIR, "Out_of_sample_pulp")
-    elif "Aluminum" in excel_path:
-        tab_file_folder = os.path.join(SCRIPT_DIR, "Out_of_sample_alu")
-    else:
-        raise ValueError("Unknown excel file type. Please check the file name.")
-else:
-    tab_file_folder = SCRIPT_DIR
-
-
-
-#####################################################################################
-################################## KONSTANTE SETT ###################################
-#####################################################################################
-#################### HUSK Å ENDRE DISSE I DE ANDRE FILENE OGSÅ ######################
-#####################################################################################
-
 ##################################################################################
 ############################### READING EXCEL FILE ###############################
 ##################################################################################
@@ -237,6 +189,96 @@ def read_all_sheets(excel):
 
 # Call the function with your Excel file
 #read_all_sheets('Input_data_With_dummyGrid_and_RT.xlsx')
+
+
+#####################################################################################
+################################ Ble for stor til pushe til git ######################
+################################## må genereres i solstorm ##########################
+#####################################################################################
+
+import os
+"""
+# Always resolve the tab file path relative to script's location
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+if case == "max_out":
+    if "Pulp" in excel_path:
+        tab_file_folder = os.path.join(SCRIPT_DIR, "Out_of_sample")
+    elif "Aluminum" in excel_path:
+        tab_file_folder = os.path.join(SCRIPT_DIR, "Out_of_sample_alu")
+    else:
+        raise ValueError("Unknown excel file type. Please check the file name.")
+else:
+    tab_file_folder = SCRIPT_DIR
+"""
+# --- Use local folder if max_out, otherwise use script's location ---
+import os
+if case == "max_out":
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    Grandparent_folder = f"Results"
+    parent_folder = f"Results_{filenumber}"
+    sub_folder = f"Out_of_sample_{filenumber}"
+
+    tab_file_folder = os.path.join(base_dir, Grandparent_folder, parent_folder, sub_folder)
+    #tab_file_folder = os.getcwd()  # local working directory (copied out-of-sample folder)
+else:
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    Grandparent_folder = f"Results"
+    parent_folder = f"Results_{filenumber}"
+    sub_folder = f"In_sample_data_{filenumber}"
+
+    tab_file_folder = os.path.join(base_dir, Grandparent_folder, parent_folder, sub_folder)
+    #tab_file_folder = os.path.dirname(os.path.abspath(__file__))
+
+
+def generate_cost_activity(num_nodes, num_timesteps, cost_activity, tab_file_folder,  filename="Par_ActivityCost.tab"):
+    # Resolve filename relative to the chosen folder
+    file_path = os.path.join(tab_file_folder, filename)
+   
+    def data_generator(chunk_size=10_000_000):
+        rows = []
+        count = 0
+        for node in range(3, num_nodes + 1):
+            for tech, mode_costs in cost_activity.items():
+                for mode in mode_costs:
+                    for t in range(1, num_timesteps + 1):
+                        cost = mode_costs[mode]
+                        rows.append({
+                            "Node": node,
+                            "Time": t,
+                            "Technology": tech,
+                            "Operational_mode": mode,
+                            "Cost": cost
+                        })
+                        count += 1
+                        if count % chunk_size == 0:
+                            yield pd.DataFrame(rows)
+                            rows = []
+        if rows:
+            yield pd.DataFrame(rows)
+   
+    make_tab_file(file_path, data_generator())
+
+
+if case == "max_out":
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    Grandparent_folder = f"Results"
+    parent_folder = f"Results_{filenumber}"
+    sub_folder = f"Out_of_sample_{filenumber}"
+    tab_file_folder = os.path.join(base_dir, Grandparent_folder, parent_folder, sub_folder)
+
+    if not os.path.isdir(tab_file_folder):
+        raise FileNotFoundError(f"Expected folder does not exist: {tab_file_folder}")
+    
+    generate_cost_activity(num_nodes=14, num_timesteps=24, tab_file_folder=tab_file_folder, cost_activity=cost_activity)
+
+
+#####################################################################################
+################################## KONSTANTE SETT ###################################
+#####################################################################################
+#################### HUSK Å ENDRE DISSE I DE ANDRE FILENE OGSÅ ######################
+#####################################################################################
+
 
 ####################################################################
 ######################### MODEL SPECIFICATIONS #####################
@@ -1123,11 +1165,11 @@ run_label = f"case_{case}_cluster_{cluster}_year_{year}_{timestamp}"
 
 
 # Use the script’s location as base_dir.
-base_dir = os.path.dirname(os.path.abspath(__file__))
+#base_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Build the results folder name using filenumber.
-result_folder = os.path.join(base_dir, "Results", f"Results_{filenumber}")
-os.makedirs(result_folder, exist_ok=True)
+#result_folder = os.path.join(base_dir, "Results", f"Results_{filenumber}")
+#os.makedirs(result_folder, exist_ok=True)
 
 # Create a subfolder for input data.
 #input_data_folder = os.path.join(result_folder, "input_data")
@@ -1601,7 +1643,7 @@ if case in ["wide_small", "wide_medium", "wide_large", "deep_small", "deep_mediu
         raise ValueError("Unknown industry in excel_path.")
     
     # Create a local copy of the out-of-sample folder in the current run's result folder.
-    local_out_sample = os.path.join(result_folder, "Out_of_sample")
+    local_out_sample = os.path.join(result_folder, f"Out_of_sample_{filenumber}")
     # Remove the destination folder if it already exists to make a clean copy.
     if os.path.isdir(local_out_sample):
         shutil.rmtree(local_out_sample)

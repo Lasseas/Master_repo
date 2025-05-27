@@ -1,8 +1,9 @@
 import pandas as pd
 import numpy as np
 import random
+import os
 
-def run_everything(excel_path, instance, year, cluster, num_branches_to_firstStage, num_branches_to_secondStage, num_branches_to_thirdStage, num_branches_to_fourthStage, num_branches_to_fifthStage, num_branches_to_sixthStage, num_branches_to_seventhStage, num_branches_to_eighthStage, num_branches_to_ninthStage, num_branches_to_tenthStage, num_branches_to_eleventhStage, num_branches_to_twelfthStage, num_branches_to_thirteenthStage, num_branches_to_fourteenthStage, num_branches_to_fifteenthStage):
+def run_everything(excel_path, result_folder, filenumber, instance, year, cluster, num_branches_to_firstStage, num_branches_to_secondStage, num_branches_to_thirdStage, num_branches_to_fourthStage, num_branches_to_fifthStage, num_branches_to_sixthStage, num_branches_to_seventhStage, num_branches_to_eighthStage, num_branches_to_ninthStage, num_branches_to_tenthStage, num_branches_to_eleventhStage, num_branches_to_twelfthStage, num_branches_to_thirteenthStage, num_branches_to_fourteenthStage, num_branches_to_fifteenthStage):
     
 
     num_timesteps = 24
@@ -42,25 +43,65 @@ def run_everything(excel_path, instance, year, cluster, num_branches_to_firstSta
     "Dummy_Grid": {1: 0} #1 = Export
     }
 
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    excel_filename = "Input_data_With_dummyGrid_and_RT.xlsx"
+    excel_path_input = os.path.join(base_dir, excel_filename)
+
+    in_sample_data_folder = os.path.join(result_folder, f"In_sample_data_{filenumber}")
+    os.makedirs(in_sample_data_folder, exist_ok=True)
+    
+    def read_all_sheets(excel_path_input = excel_path_input, output_folder=in_sample_data_folder):
+        xlsx = pd.ExcelFile(excel_path_input)
+        for sheet in xlsx.sheet_names:
+            df = pd.read_excel(xlsx, sheet_name=sheet, skiprows=2)
+            df = df.dropna(how='all')
+            df.columns = df.columns.str.replace(' ', '_')
+            df = df.fillna('').applymap(str)
+
+            # build the full path into your in-sample folder
+            out_file = os.path.join(output_folder, f"{sheet}.tab")
+            df.to_csv(
+                out_file,
+                sep='\t',
+                index=False,
+                header=True,
+                lineterminator='\n'
+            )
+            print(f"Saved {out_file}")
+
+    # Call the function with your Excel file
+    read_all_sheets()
 
 
-    def make_tab_file(filename, data_generator, chunk_size=10_000_000):
+    def make_tab_file(filename, data_generator, chunk_size=10_000_000, in_sample_data_folder=in_sample_data_folder):
         """
         Writes a large dataset to a .tab file in chunks using tab as a delimiter.
 
         Parameters:
-            filename (str): Name of the tab-separated file to save (e.g., 'output.tab').
-            data_generator (generator): A generator that yields DataFrame chunks.
-            chunk_size (int): Number of rows to process per chunk.
+        output_folder (str): Full path to the folder where the file should be saved.
+        filename      (str): Name of the file (e.g. 'Par_ActivityCost.tab').
+        data_generator:   Generator yielding pandas.DataFrame chunks.
         """
-        first_chunk = True  # Used to write the header only once
+        # 1) Ensure the folder exists
+        os.makedirs(in_sample_data_folder, exist_ok=True)
 
-        with open(filename, "w", newline='') as f:
-            for df_chunk in data_generator:
-                df_chunk.to_csv(f, sep = "\t", index=False, header=first_chunk, lineterminator='\n')
+        # 2) Build the full file path
+        filepath = os.path.join(in_sample_data_folder, filename)
+
+        # 3) Write in chunks
+        first_chunk = True
+        with open(filepath, "w", newline="") as f:
+            for df in data_generator:
+                df.to_csv(
+                    f,
+                    sep="\t",
+                    index=False,
+                    header=first_chunk,
+                    lineterminator="\n"
+                )
                 first_chunk = False
 
-        print(f"{filename} saved successfully!")
+        print(f"Saved {filepath}")
 
 
 
@@ -425,9 +466,10 @@ def run_everything(excel_path, instance, year, cluster, num_branches_to_firstSta
     ########################### GET CHILD MAPPINNG FUNC #################################
     #####################################################################################
 
-    def map_children_to_parents_from_file(tab_filename):
+    def map_children_to_parents_from_file(tab_filename, in_sample_data_folder = in_sample_data_folder):
+        filepath = os.path.join(in_sample_data_folder, tab_filename)
         # Les tab-fila (antatt tab-separert)
-        df = pd.read_csv(tab_filename, sep="\t")
+        df = pd.read_csv(filepath, sep="\t")
         
         # Bygg et dictionary med umiddelbare relasjoner: barn -> forelder
         child_to_parent = {row["Node"]: row["Parent"] for _, row in df.iterrows()}
@@ -453,18 +495,19 @@ def run_everything(excel_path, instance, year, cluster, num_branches_to_firstSta
         
         return grouping
 
-    def extract_parent_coupling(tab_filename = "Set_ParentCoupling.tab"):
-        df = pd.read_csv(tab_filename, sep="\t")
+    def extract_parent_coupling(in_sample_data_folder = in_sample_data_folder, tab_filename = "Set_ParentCoupling.tab"):
+        filepath = os.path.join(in_sample_data_folder, tab_filename)
+        df = pd.read_csv(filepath, sep="\t")
         data = {
             "Node": df["Node"].tolist(),
             "Parent": df["Parent"].tolist()
         }
         return data
 
-    data = extract_parent_coupling()
-    df_example = pd.DataFrame(data)
+    #data = extract_parent_coupling()
+    #df_example = pd.DataFrame(data)
     taB_filenam = "Set_ParentCoupling.tab"
-    df_example.to_csv(taB_filenam, sep = "\t", index=False, header=True, lineterminator='\n')
+    #df_example.to_csv(taB_filenam, sep = "\t", index=False, header=True, lineterminator='\n')
     mapping = map_children_to_parents_from_file(taB_filenam)
     print("Førstestegs-forelder : -> [alle etterkommere]:")
     mapping_converted = {int(k): [int(x) for x in v] for k, v in mapping.items()}
@@ -473,11 +516,12 @@ def run_everything(excel_path, instance, year, cluster, num_branches_to_firstSta
     ####################################################################################
     ########################### GET PARENT MAPPING FUNC #################################
     #####################################################################################
-    def create_parent_mapping(filepath):
+    def create_parent_mapping(filename, in_sample_data_folder = in_sample_data_folder):
         """
         Leser en .tab-fil med kolonnene 'Node' og 'Parent',
         og returnerer en parent_mapping som et Python-dictionary.
         """
+        filepath = os.path.join(in_sample_data_folder, filename)
         # Les filen
         df = pd.read_csv(filepath, sep="\t")
         
@@ -1072,16 +1116,18 @@ def run_everything(excel_path, instance, year, cluster, num_branches_to_firstSta
     #####################################################################################
 
     # Function to count number of periods from Set_of_Periods.tab
-    def get_number_of_periods_from_tab(filepath="Set_of_Periods.tab"):
+    def get_number_of_periods_from_tab(filename="Set_of_Periods.tab", in_sample_data_folder = in_sample_data_folder):
+        filepath = os.path.join(in_sample_data_folder, filename)
         df = pd.read_csv(filepath, sep="\t")
         return len(df)
     
-    def generate_set_of_LoadShiftingPeriod(periods_tab="Set_of_Periods.tab", filename="Set_of_LoadShiftingPeriod.tab"):
+    def generate_set_of_LoadShiftingPeriod(filename="Set_of_LoadShiftingPeriod.tab"):
         def data_generator():
-            # Read the periods tab file
-            df_periods = pd.read_csv(periods_tab, sep="\t")
-            df_all = pd.DataFrame({"LoadShiftingPeriod": df_periods["Periods"]})
-            yield df_all
+            n_periods = get_number_of_periods_from_tab()
+            df = pd.DataFrame({
+            "LoadShiftingPeriod": list(range(1, n_periods + 1))
+            })
+            yield df
             """
             if excel_path == "NO1_Aluminum_2024_combined historical data.xlsx":
                 # Use all periods
@@ -1116,42 +1162,51 @@ def run_everything(excel_path, instance, year, cluster, num_branches_to_firstSta
 
     # Functions to scale and write .tab files for each parameter
     def generate_Par_CostExpansion_Tec(filename="Par_CostExpansion_Tec.tab"):
-        num_periods = get_number_of_periods_from_tab()
-        rows = [
-            {"Technology": tech, "CostExpansion": cost * num_periods}
-            for tech, cost in CostExpansion_Tec.items()
-        ]
-        df = pd.DataFrame(rows)
-        df.to_csv(filename, sep="\t", index=False, lineterminator='\n')
-        print(f"{filename} saved successfully!")
+        def data_generator():
+            num_periods = get_number_of_periods_from_tab()
+            rows = [
+                {"Technology": tech, "CostExpansion": cost * num_periods}
+                for tech, cost in CostExpansion_Tec.items()
+            ]
+            yield pd.DataFrame(rows)
+
+        make_tab_file(filename, data_generator())
+        
 
     def generate_Par_CostExpansion_Bat(filename="Par_CostExpansion_Bat.tab"):
-        num_periods = get_number_of_periods_from_tab()
-        rows = [
-            {"StorageTech": bat, "CostExpansion": cost * num_periods}
-            for bat, cost in CostExpansion_Bat.items()
-        ]
-        df = pd.DataFrame(rows)
-        df.to_csv(filename, sep="\t", index=False, lineterminator='\n')
-        print(f"{filename} saved successfully!")
+        def data_generator():
+            num_periods = get_number_of_periods_from_tab()
+            rows = [
+                {"StorageTech": bat, "CostExpansion": cost * num_periods}
+                for bat, cost in CostExpansion_Bat.items()
+            ]
+            yield pd.DataFrame(rows)
+
+        make_tab_file(filename, data_generator())
+
 
     def generate_Par_CostGridTariff(filename="Par_CostGridTariff.tab"):
-        num_periods = get_number_of_periods_from_tab()
-        total_tariff = CostGridTariff * num_periods
+        def data_generator():
+            num_periods = get_number_of_periods_from_tab()
+            total_tariff = CostGridTariff * num_periods
 
-        df = pd.DataFrame([{
-            "Tariff": total_tariff
-        }])
+            df = pd.DataFrame([{
+                "Tariff": total_tariff
+            }])
+            yield df
+        make_tab_file(filename, data_generator())
 
-        df.to_csv(filename, sep="\t", index=False, lineterminator='\n')
-        print(f"{filename} saved successfully!")
 
 
     def generate_Par_LastPeriodInMonth(filename="Par_LastPeriodInMonth.tab"):
-        num_periods = get_number_of_periods_from_tab()
-        df = pd.DataFrame([{"Month": 1, "LastPeriodInMonth": num_periods}])
-        df.to_csv(filename, sep="\t", index=False, lineterminator='\n')
-        print(f"{filename} saved successfully!")
+        def data_generator():
+            # This function assumes that the number of periods is constant for all months
+            num_periods = get_number_of_periods_from_tab()
+            df = pd.DataFrame([{"Month": 1, "LastPeriodInMonth": num_periods}])
+            yield df
+
+        make_tab_file(filename, data_generator())
+        
 
 
   
@@ -1504,8 +1559,6 @@ def run_everything(excel_path, instance, year, cluster, num_branches_to_firstSta
         return pd.DataFrame(rows)
     
     def generate_max_upshift_file(excel_path, num_timesteps, filename="Par_MaxUpShift.tab"):
-        shift_hours = range(8, 18)
-
         if "Pulp_Paper" in excel_path:
             factor = 0.1
             industry = "pulp"
@@ -1515,16 +1568,19 @@ def run_everything(excel_path, instance, year, cluster, num_branches_to_firstSta
         else:
             raise ValueError("Invalid excel_path: must contain 'Pulp_Paper' or 'Aluminum'")
 
-        
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write("Time\tMaximumUpShift\n")
+        def data_generator():
+            shift_hours = range(8, 18)
+            rows = []
             for t in range(1, num_timesteps + 1):
                 if industry == "alu":
                     value = factor
                 elif industry == "pulp":
                     value = factor if t in shift_hours else 0
-                f.write(f"{t}\t{value}\n")
+                rows.append({"Time": t, "MaximumUpShift": value})
+            yield pd.DataFrame(rows)
 
+        make_tab_file(filename, data_generator())
+        
 
     def generate_max_downshift_file(excel_path, num_timesteps, filename="Par_MaxDwnShift.tab"):
         shift_hours = range(8, 18)
@@ -1538,15 +1594,19 @@ def run_everything(excel_path, instance, year, cluster, num_branches_to_firstSta
         else:
             raise ValueError("Invalid excel_path: must contain 'Pulp_Paper' or 'Aluminum'")
 
-        
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write("Time\tMaximumDwnShift\n")
+        def data_generator():
+            shift_hours = range(8, 18)
+            rows = []
             for t in range(1, num_timesteps + 1):
                 if industry == "alu":
                     value = factor
                 elif industry == "pulp":
                     value = factor if t in shift_hours else 0
-                f.write(f"{t}\t{value}\n")
+                rows.append({"Time": t, "MaximumUpShift": value})
+            yield pd.DataFrame(rows)
+
+        make_tab_file(filename, data_generator())
+        
 
     
 
