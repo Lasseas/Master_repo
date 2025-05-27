@@ -62,7 +62,7 @@ case_configs = {
     "balanced_medium": (2, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), #512 scenarioer
     "balanced_large": (2, 4, 4, 4, 4, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0), #1024 scenarioer
     "max_in":  (2, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-    "max_out":  (2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+    "max_out":  (2, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0),
     "git_push": (2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 }
 
@@ -270,7 +270,7 @@ if case == "max_out":
     if not os.path.isdir(tab_file_folder):
         raise FileNotFoundError(f"Expected folder does not exist: {tab_file_folder}")
     
-    generate_cost_activity(num_nodes=14, num_timesteps=24, tab_file_folder=tab_file_folder, cost_activity=cost_activity)
+    generate_cost_activity(num_nodes=7812, num_timesteps=24, tab_file_folder=tab_file_folder, cost_activity=cost_activity)
 
 
 #####################################################################################
