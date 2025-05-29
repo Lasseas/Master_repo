@@ -270,7 +270,7 @@ if case == "max_out":
     if not os.path.isdir(tab_file_folder):
         raise FileNotFoundError(f"Expected folder does not exist: {tab_file_folder}")
     
-    generate_cost_activity(num_nodes=7812, num_timesteps=24, tab_file_folder=tab_file_folder, cost_activity=cost_activity)
+    generate_cost_activity(num_nodes= 7812, num_timesteps= 24, tab_file_folder=tab_file_folder, cost_activity=cost_activity) #7812
 
 
 #####################################################################################
@@ -1658,8 +1658,35 @@ if case in ["wide_small", "wide_medium", "wide_large", "deep_small", "deep_mediu
     subprocess.run(
         ["python", main_abs, "--year", str(year), "--case", "max_out", "--cluster", "season", "--industry", industry_flag, "--file", filenumber],
         cwd=local_out_sample)
+    
 
 
+###############################################################################################################
+#################### SLETTER IN-SAMPLE FOLDER OG SPARER INVESTERING I OUT-OF-SAMPLE ###########################
+################################################################################################################
+
+if case == "max_out":
+    # Delete the entire In_sample_data_{filenumber} folder
+    in_sample_folder = os.path.join(result_folder, f"In_sample_data_{filenumber}")
+    if os.path.isdir(in_sample_folder):
+        shutil.rmtree(in_sample_folder)
+        print(f"Deleted folder: {in_sample_folder}")
+
+    files_to_save = {
+    "Par_InitialCapacityInstalled.tab",
+    "Par_MaxChargeDischargeRate.tab",
+    "Par_MaxStorageCapacity.tab"
+    }
+    # In the Out_of_sample_{filenumber} folder, delete all files except those containing "tree" in their filename.
+    out_of_sample_folder = os.path.join(result_folder, f"Out_of_sample_{filenumber}")
+    if os.path.isdir(out_of_sample_folder):
+        for fname in os.listdir(out_of_sample_folder):
+            # if the filename (lowercase) does not include "tree", delete it
+            if fname not in files_to_save:
+                file_path = os.path.join(out_of_sample_folder, fname)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+                    print(f"Deleted file: {file_path}")
 """
 PLOT RESULTS
 """
