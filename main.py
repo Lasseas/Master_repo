@@ -137,7 +137,7 @@ def make_tab_file(filename, data_generator, chunk_size=10_000_000):
         print(f"{filename} saved successfully!")
 
 cost_activity = {
-    "Power_Grid": {1: 0, 2: -1.162, 3: 2000, 4: -2000}, # 1 = Import, 2 = Export, 3 = RT_Import, 4 = RT_Export 
+    "Power_Grid": {1: 0, 2: -1.162, 3: 1000, 4: -1000}, # 1 = Import, 2 = Export, 3 = RT_Import, 4 = RT_Export 
     "ElectricBoiler": {1: 0, 2: 0, 3: 0}, #1 = LT, 2 = MT, 3 = Dummy
     "HP_LT": {1: 0, 2: 0}, #1 = LT, 2 = Dummy
     "HP_MT": {1: 0, 2: 0, 3: 0}, #1 = LT, 2 = MT, 3 = Dummy
@@ -515,6 +515,8 @@ model.I_OPEX_printOut = pyo.Var()
 model.RealTime_Import = pyo.Var()
 model.RealTime_Export = pyo.Var()
 model.Dummy_Grid_utilization = pyo.Var()
+model.gas_boil_utilization = pyo.Var()
+model.el_boil_utilization = pyo.Var()
 """
 OBJECTIVE
 """ 
@@ -734,6 +736,30 @@ def dummyfuel_utilization_rule(model):
         if (n, t, "Dummy_Grid", "DummyFuel", o) in model.y_in
     )
 model.DummyFuelUtilizationConstraint = pyo.Constraint(rule=dummyfuel_utilization_rule)
+
+def gasboil_utilization_rule(model):
+    return model.gas_boil_utilization == sum(
+        model.Node_Probability[n] *
+        model.y_out[n, t, "GasBoiler", e, o]
+        for (n, stage) in model.Nodes_in_stage
+        for t in model.Time
+        for e in model.EnergyCarrier if e in ["LT", "MT"]
+        for o in model.Mode_of_operation
+        if (n, t, "GasBoiler", e, o) in model.y_out
+    )
+model.GasBoilUtilizationConstraint = pyo.Constraint(rule=gasboil_utilization_rule)
+
+def electricboiler_utilization_rule(model):
+    return model.el_boil_utilization == sum(
+        model.Node_Probability[n] *
+        model.y_out[n, t, "ElectricBoiler", e, o]
+        for (n, stage) in model.Nodes_in_stage
+        for t in model.Time
+        for e in model.EnergyCarrier if e in ["LT", "MT"]
+        for o in model.Mode_of_operation
+        if (n, t, "ElectricBoiler", e, o) in model.y_out
+    )
+model.ElboilUtilizationConstraint = pyo.Constraint(rule=electricboiler_utilization_rule)
 
 
 ########################################################################################################
@@ -1376,7 +1402,8 @@ GridTariff_cost = pyo.value(our_model.I_GT)
 Imbalance_cost_import = pyo.value(our_model.RealTime_Import)
 Imbalance_cost_export = pyo.value(our_model.RealTime_Export)
 DummyFuel_utilization = pyo.value(our_model.Dummy_Grid_utilization)
-
+Elboil_utilization = pyo.value(our_model.el_boil_utilization)
+Gasboil_utilization = pyo.value(our_model.gas_boil_utilization)
 
 
 if case != "max_out":
@@ -1487,6 +1514,8 @@ if case != "max_out":
     Imbalance cost related to Real-time adjustment import: {Imbalance_cost_import:.2f}
     Imbalance cost related to Real-time adjustment export: {Imbalance_cost_export:.2f}
     Total DummyFuel used by Dummy Grid: {DummyFuel_utilization:,.2f}
+    Total heat demand from elboiler: {Elboil_utilization:,.2f}
+    Total heat demand from gasboiler: {Gasboil_utilization:,.2f}
     """
 
 
@@ -1546,6 +1575,8 @@ else:
     Imbalance cost related to Real-time adjustment import: {Imbalance_cost_import:.2f}
     Imbalance cost related to Real-time adjustment export: {Imbalance_cost_export:.2f}
     Total DummyFuel used by Dummy Grid: {DummyFuel_utilization:,.2f}
+    Total heat demand from elboiler: {Elboil_utilization:,.2f}
+    Total heat demand from gasboiler: {Gasboil_utilization:,.2f}
     """
 
 case_and_objective_path = os.path.join(result_folder, f"case_and_objective_info_{'out' if case == 'max_out' else 'in'}.txt")

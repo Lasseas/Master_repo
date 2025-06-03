@@ -24,7 +24,7 @@ def run_everything(excel_path, result_folder, filenumber, instance, year, cluste
     StorageTech = ["BESS_Li_Ion_1", "BESS_Redox_1", "CEAS_1", "Flywheel_1", "Hot_Water_Tank_LT_1", "H2_Storage_1", "CH4_Storage_1"]
 
     cost_activity = {
-    "Power_Grid": {1: 0, 2: -1.162, 3: 2000, 4: -2000}, # 1 = Import, 2 = Export, 3 = RT_Import, 4 = RT_Export 
+    "Power_Grid": {1: 0, 2: -1.162, 3: 1000, 4: -1000}, # 1 = Import, 2 = Export, 3 = RT_Import, 4 = RT_Export 
     "ElectricBoiler": {1: 0, 2: 0, 3: 0}, #1 = LT, 2 = MT, 3 = Dummy
     "HP_LT": {1: 0, 2: 0}, #1 = LT, 2 = Dummy
     "HP_MT": {1: 0, 2: 0, 3: 0}, #1 = LT, 2 = MT, 3 = Dummy
@@ -36,7 +36,7 @@ def run_everything(excel_path, result_folder, filenumber, instance, year, cluste
     "CHP": {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}, #1 = LT (CH4 mix), 2 = MT (CH4 mix), 3 = LT (CH4), 4 = MT (CH4), 5 = LT (Biogas), 6 = MT (Biogas)
     "CHP_CCS": {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}, #1 = LT (CH4 mix), 2 = MT (CH4 mix), 3 = LT (CH4), 4 = MT (CH4), 5 = LT (Biogas), 6 = MT (Biogas)
     "Biogas_Grid": {1: 64.5, 2: 0}, #1 = Import, 2 = Export
-    "CH4_Grid": {1: 39.479, 2: 0}, #1 = Import, 2 = Export
+    "CH4_Grid": {1: 39.479, 2: 0}, #1 = Import 39.479, 2 = Export
     "CH4_H2_Mixer": {1: 0},
     "DieselReserveGenerator": {1: 148.8},
     "H2_Grid": {1: 150.1502, 2: 0}, #1 = Import, 2 = Export
@@ -467,7 +467,6 @@ def run_everything(excel_path, result_folder, filenumber, instance, year, cluste
     # --------------------------    --------------------------      
 
     CostGridTariff = 123.93
-
 
 
 
