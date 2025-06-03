@@ -24,7 +24,7 @@ def run_everything(excel_path, result_folder, filenumber, instance, year, cluste
     StorageTech = ["BESS_Li_Ion_1", "BESS_Redox_1", "CEAS_1", "Flywheel_1", "Hot_Water_Tank_LT_1", "H2_Storage_1", "CH4_Storage_1"]
 
     cost_activity = {
-    "Power_Grid": {1: 0, 2: -1.162, 3: 1000, 4: -1000}, # 1 = Import, 2 = Export, 3 = RT_Import, 4 = RT_Export 
+    "Power_Grid": {1: 0, 2: -1.162, 3: 250, 4: -50}, # 1 = Import, 2 = Export, 3 = RT_Import, 4 = RT_Export 
     "ElectricBoiler": {1: 0, 2: 0, 3: 0}, #1 = LT, 2 = MT, 3 = Dummy
     "HP_LT": {1: 0, 2: 0}, #1 = LT, 2 = Dummy
     "HP_MT": {1: 0, 2: 0, 3: 0}, #1 = LT, 2 = MT, 3 = Dummy
@@ -467,6 +467,7 @@ def run_everything(excel_path, result_folder, filenumber, instance, year, cluste
     # --------------------------    --------------------------      
 
     CostGridTariff = 123.93
+    
 
 
 
@@ -1471,7 +1472,7 @@ def run_everything(excel_path, result_folder, filenumber, instance, year, cluste
         
         make_tab_file(filename, data_generator())
 
-
+    
     def generate_ReferenceDemand(num_nodes, num_timesteps, energy_carriers, ReferenceDemand, filename = "Par_EnergyDemand.tab"):
         def data_generator(chunk_size=10_000_000):
             rows = []
@@ -1507,6 +1508,7 @@ def run_everything(excel_path, result_folder, filenumber, instance, year, cluste
                 yield pd.DataFrame(rows)
         make_tab_file(filename, data_generator())
 
+   
     def generate_NodeProbability(num_nodes, NodeProbability, filename = "Par_NodesProbability.tab"):
         def data_generator(chunk_size=10_000_000):
             rows = []

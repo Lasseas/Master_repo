@@ -137,7 +137,7 @@ def make_tab_file(filename, data_generator, chunk_size=10_000_000):
         print(f"{filename} saved successfully!")
 
 cost_activity = {
-    "Power_Grid": {1: 0, 2: -1.162, 3: 1000, 4: -1000}, # 1 = Import, 2 = Export, 3 = RT_Import, 4 = RT_Export 
+    "Power_Grid": {1: 0, 2: -1.162, 3: 250, 4: -50}, # 1 = Import, 2 = Export, 3 = RT_Import, 4 = RT_Export 
     "ElectricBoiler": {1: 0, 2: 0, 3: 0}, #1 = LT, 2 = MT, 3 = Dummy
     "HP_LT": {1: 0, 2: 0}, #1 = LT, 2 = Dummy
     "HP_MT": {1: 0, 2: 0, 3: 0}, #1 = LT, 2 = MT, 3 = Dummy
@@ -1404,6 +1404,7 @@ Imbalance_cost_export = pyo.value(our_model.RealTime_Export)
 DummyFuel_utilization = pyo.value(our_model.Dummy_Grid_utilization)
 Elboil_utilization = pyo.value(our_model.el_boil_utilization)
 Gasboil_utilization = pyo.value(our_model.gas_boil_utilization)
+
 
 
 if case != "max_out":
