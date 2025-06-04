@@ -761,7 +761,6 @@ def electricboiler_utilization_rule(model):
     )
 model.ElboilUtilizationConstraint = pyo.Constraint(rule=electricboiler_utilization_rule)
 
-
 ########################################################################################################
 ########################################################################################################
 
